@@ -1,0 +1,102 @@
+---
+import { fetchTags } from '@/lib/api';
+import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
+
+const tags = await fetchTags();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Tags - News Site</title>
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <h1>News Site</h1>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/tags">Tags</a></li>
+        </ul>
+        <ThemeSwitcher />
+      </nav>
+    </header>
+
+    <main>
+      <section class="tags-page">
+        <h1>All Categories</h1>
+        <p class="tags-page__subtitle">Browse news by topic</p>
+
+        <div class="tags-grid">
+          {tags.map((tag) => (
+            <a href={`/tag/${tag.id}`} class="tag-card">
+              <h2>{tag.tag}</h2>
+              {tag.desc && <p>{tag.desc}</p>}
+            </a>
+          ))}
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; {new Date().getFullYear()} News Site</p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .tags-page {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .tags-page h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-primary);
+  }
+
+  .tags-page__subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+  }
+
+  .tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .tag-card {
+    padding: 1.5rem;
+    background: var(--color-surface);
+    border: 2px solid var(--color-accent);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .tag-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary);
+  }
+
+  .tag-card h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+  }
+
+  .tag-card p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+</style>

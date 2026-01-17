@@ -1,104 +1,133 @@
 ---
-import ImageMod from "@/components/ImageMod.astro";
-import Base from "@/layouts/Base.astro";
-import { getListPage } from "@/lib/contentParser.astro";
-import { markdownify } from "@/lib/utils/textConverter";
-import CallToAction from "@/partials/CallToAction.astro";
-import Testimonial from "@/partials/Testimonial.astro";
-import { FaCheck } from "react-icons/fa";
+import { fetchMeta, fetchTags, fetchRecentNews, fetchSources } from '@/lib/api';
+import NewsGrid from '@/components/NewsGrid.astro';
+import TagList from '@/components/TagList.astro';
+import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
+import type { Source } from '@/types/db';
 
-const homepage = await getListPage("homepage", "-index");
-const call_to_action = await getListPage("ctaSection", "call-to-action");
-const testimonial = await getListPage("testimonialSection", "testimonial");
+// Fetch data at build time
+const [meta, tags, recentNews, sources] = await Promise.all([
+  fetchMeta(),
+  fetchTags(),
+  fetchRecentNews(20),
+  fetchSources(),
+]);
 
-const { banner, features } = homepage.data;
+// Create sources map for quick lookup
+const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 ---
 
-<Base>
-  <!-- Banner -->
-  <section class="section pt-14">
-    <div class="container">
-      <div class="row justify-center">
-        <div class="lg:col-7 md:col-9 mb-8 text-center">
-          <h1
-            set:html={markdownify(banner.title)}
-            class="mb-4 text-h3 lg:text-h1"
-          />
-          <p set:html={markdownify(banner.content)} class="mb-8" />
-          {
-            banner.button.enable && (
-              <a
-                class="btn btn-primary"
-                href={banner.button.link}
-                target={
-                  banner.button.link.startsWith("http") ? "_blank" : "_self"
-                }
-                rel="noopener"
-              >
-                {banner.button.label}
-              </a>
-            )
-          }
-        </div>
-        {
-          banner.image && (
-            <div class="col-12">
-              <ImageMod
-                src={banner.image}
-                height={380}
-                width={1200}
-                alt="banner"
-                format="webp"
-              />
-            </div>
-          )
-        }
-      </div>
-    </div>
-  </section>
-  <!-- /Banner -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News Site - Latest News</title>
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <h1>News Site</h1>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/tags">Tags</a></li>
+        </ul>
+        <ThemeSwitcher />
+      </nav>
+    </header>
 
-  <!-- Features -->
-  {
-    features.map((feature, index: number) => (
-      <section class={`section-sm ${index % 2 === 0 && "bg-gradient"}`}>
-        <div class="container">
-          <div class="row items-center justify-between">
-            <div
-              class={`mb:md-0 mb-6 md:col-5 ${index % 2 !== 0 && "md:order-2"}`}
-            >
-              <ImageMod
-                src={feature.image}
-                height={480}
-                width={520}
-                alt={feature.title}
-                format="webp"
-              />
-            </div>
-            <div class={`md:col-7 lg:col-6 ${index % 2 !== 0 && "md:order-1"}`}>
-              <h2 set:html={markdownify(feature.title)} class="mb-4" />
-              <p set:html={markdownify(feature.content)} class="mb-8 text-lg" />
-              <ul>
-                {feature.bulletpoints.map((bullet: string) => (
-                  <li class="relative mb-4 pl-6">
-                    <FaCheck className={"absolute left-0 top-1.5"} />
-                    <span set:html={markdownify(bullet)} />
-                  </li>
-                ))}
-              </ul>
-              {feature.button.enable && (
-                <a class="btn btn-primary mt-5" href={feature.button.link}>
-                  {feature.button.label}
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+    <main>
+      <section class="hero">
+        <h1>Latest News</h1>
+        <p>Stay updated with the latest news and articles</p>
       </section>
-    ))
-  }
-  <!-- /Features -->
 
-  <Testimonial testimonial={testimonial} />
-  <CallToAction call_to_action={call_to_action} />
-</Base>
+      <TagList tags={tags} limit={20} />
+
+      <section class="latest-news">
+        <h2>Latest Articles</h2>
+        <NewsGrid items={recentNews} sources={sourcesMap} columns={3} />
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; {new Date().getFullYear()} News Site</p>
+    </footer>
+
+    <!-- Client-side JavaScript for archive articles -->
+    <script type="module" src="./scripts/main.js"></script>
+  </body>
+</html>
+
+<style>
+  /* Global styles */
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--color-text);
+    background: var(--color-background);
+  }
+
+  header {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--color-surface);
+  }
+
+  header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header nav ul {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  header nav a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  header nav ul {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    align-items: center;
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .latest-news h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  footer {
+    padding: 2rem;
+    text-align: center;
+    border-top: 1px solid var(--color-surface);
+    margin-top: 4rem;
+  }
+</style>

@@ -1,0 +1,155 @@
+---
+import { fetchMeta, fetchNewsRawById, fetchSources } from '@/lib/api';
+import type { NewsRawItem, Source } from '@/types/db';
+
+export async function getStaticPaths() {
+  // Fetch metadata to get latest ID
+  const meta = await fetchMeta();
+  const latestId = meta.tables.news_raw.latest_id;
+
+  // Generate static pages for last 100 articles
+  const staticLimit = 100;
+  const paths = [];
+
+  for (let id = latestId; id > latestId - staticLimit && id > 0; id--) {
+    paths.push({
+      params: { id: id.toString() },
+    });
+  }
+
+  return paths;
+}
+
+const { id } = Astro.params;
+const item = await fetchNewsRawById(parseInt(id));
+
+// Handle 404
+if (!item) {
+  return Astro.redirect('/404');
+}
+
+// Fetch tags and sources for display
+const { fetchTags, fetchSources } = await import('@/lib/api');
+const [allTags, sources] = await Promise.all([fetchTags(), fetchSources()]);
+const itemTags = allTags.filter((tag) => item.cats.includes(tag.id));
+
+// Create sources map
+const sourcesMap = new Map(sources.map((s) => [s.id, s]));
+
+// Helper to get source name
+const getSourceName = (sourceId: string): string => {
+  const id = parseInt(sourceId);
+  const source = sourcesMap.get(id);
+  return source?.title || sourceId;
+};
+
+// Helper to get source link
+const getSourceLink = (sourceId: string): string => {
+  const id = parseInt(sourceId);
+  const source = sourcesMap.get(id);
+  return source?.link || '#';
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{item.title} - News Site</title>
+    <meta name="description" content={item.article.slice(0, 160)} />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+
+    {item.imgUrl && <meta property="og:image" content={item.imgUrl} />}
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">← Back to Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <article class="article-full">
+        <header class="article-full__header">
+          <span class="article-full__source">{getSourceName(item.source)}</span>
+
+          <h1 class="article-full__title">{item.title}</h1>
+
+          <time class="article-full__date" datetime={item.created_at}>
+            {new Date(item.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </time>
+
+          {itemTags.length > 0 && (
+            <div class="article-full__tags">
+              {itemTags.map(
+                (tag) => (
+                  <a href={`/tag/${tag.id}`} class="tag">
+                    {tag.tag}
+                  </a>
+                )
+              )}
+            </div>
+          )}
+        </header>
+
+        {item.imgUrl && (
+          <div class="article-full__image">
+            <img src={item.imgUrl} alt={item.title} />
+          </div>
+        )}
+
+        <div class="article-full__content">
+          <div set:html={item.article} />
+        </div>
+
+        <footer class="article-full__footer">
+          <p>
+            Originally published by{' '}
+            <a href={getSourceLink(item.source)} target="_blank" rel="noopener noreferrer">
+              {getSourceName(item.source)}
+            </a>
+          </p>
+        </footer>
+      </article>
+    </main>
+
+    <script type="module" src="../scripts/main.js"></script>
+  </body>
+</html>
+
+<style>
+  header {
+    padding: 1rem 2rem;
+  }
+
+  header nav a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .article-full__tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .article-full__tags .tag {
+    padding: 0.25rem 0.75rem;
+    background: var(--color-surface);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: var(--color-text);
+  }
+</style>

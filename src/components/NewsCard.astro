@@ -1,0 +1,128 @@
+---
+import type { NewsRawItem, Source } from '@/types/db';
+
+interface Props {
+  item: NewsRawItem;
+  sources?: Map<number, Source>;
+  showSource?: boolean;
+  showImage?: boolean;
+}
+
+const { item, sources, showSource = true, showImage = true } = Astro.props;
+
+// Get source name from source ID
+const getSourceName = (sourceId: string): string => {
+  if (!sources) return sourceId;
+  const id = parseInt(sourceId);
+  const source = sources.get(id);
+  return source?.title || sourceId;
+};
+
+// Format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+// Truncate text
+const truncate = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trim() + '...';
+};
+---
+
+<article class="news-card">
+  {showImage && item.imgUrl && (
+    <div class="news-card__image">
+      <img src={item.imgUrl} alt={item.title} loading="lazy" />
+    </div>
+  )}
+
+  <div class="news-card__content">
+    {showSource && <span class="news-card__source">{getSourceName(item.source)}</span>}
+
+    <h3 class="news-card__title">
+      <a href={`/news/${item.id}`}>{item.title}</a>
+    </h3>
+
+    <p class="news-card__excerpt">{truncate(item.article, 150)}</p>
+
+    <time class="news-card__date" datetime={item.created_at}>
+      {formatDate(item.created_at)}
+    </time>
+  </div>
+</article>
+
+<style>
+  .news-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .news-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .news-card__image {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .news-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .news-card__content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .news-card__source {
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .news-card__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .news-card__title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .news-card__title a:hover {
+    color: var(--color-accent);
+  }
+
+  .news-card__excerpt {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .news-card__date {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+  }
+</style>

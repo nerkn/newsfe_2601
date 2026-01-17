@@ -1,5 +1,4 @@
 import mdx from "@astrojs/mdx";
-import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import AutoImport from "astro-auto-import";
@@ -11,14 +10,29 @@ import config from "./src/config/config.json";
 
 // https://astro.build/config
 export default defineConfig({
+  // Use static output (NOT server/hybrid)
+  output: 'static',
+
   site: config.site.base_url ? config.site.base_url : "http://examplesite.com",
   base: config.site.base_path ? config.site.base_path : "/",
   trailingSlash: config.site.trailing_slash ? "always" : "never",
   image: { service: sharp() },
-  vite: { plugins: [tailwindcss()] },
+  vite: {
+    plugins: [tailwindcss()],
+    // Optimize for parallel file operations
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: undefined,
+        },
+      },
+    },
+  },
   integrations: [
-    react(),
-    sitemap(),
+    sitemap({
+      changefreq: 'hourly',
+      priority: 0.7,
+    }),
     AutoImport({
       imports: [
         "@/shortcodes/Button",
@@ -36,5 +50,10 @@ export default defineConfig({
     remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
     shikiConfig: { theme: "one-dark-pro", wrap: true },
     extendDefaultPlugins: true,
+  },
+  // Build optimization
+  build: {
+    // Don't generate inline scripts for better caching
+    inlineStylesheets: 'never',
   },
 });

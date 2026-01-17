@@ -1,0 +1,109 @@
+---
+import { fetchTags, fetchNewsByTag, fetchSources } from '@/lib/api';
+import NewsGrid from '@/components/NewsGrid.astro';
+import type { Tag, Source } from '@/types/db';
+
+export async function getStaticPaths() {
+  const tags = await fetchTags();
+
+  return tags.map((tag) => ({
+    params: { tagId: tag.id.toString() },
+    props: { tag },
+  }));
+}
+
+const { tagId } = Astro.params;
+const { fetchTags: getTags, fetchNewsByTag: getNewsByTag, fetchSources: getSources } = await import('@/lib/api');
+
+// Get tag info
+const allTags = await getTags();
+const tag = allTags.find((t) => t.id === parseInt(tagId));
+
+if (!tag) {
+  return Astro.redirect('/404');
+}
+
+// Get news and sources for this tag
+const [news, sources] = await Promise.all([
+  getNewsByTag(tag.id, 20),
+  getSources(),
+]);
+
+// Create sources map
+const sourcesMap = new Map(sources.map((s) => [s.id, s]));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{tag.tag} - News Site</title>
+    <meta name="description" content={tag.desc} />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">← Back to Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="tag-header">
+        <h1>{tag.tag}</h1>
+        {tag.desc && <p>{tag.desc}</p>}
+      </section>
+
+      <section class="tag-news">
+        <h2>Latest News</h2>
+        <NewsGrid items={news} sources={sourcesMap} columns={3} />
+
+        {news.length === 0 && <p class="no-news">No news found for this tag.</p>}
+      </section>
+    </main>
+
+    <script type="module" src="../scripts/main.js"></script>
+  </body>
+</html>
+
+<style>
+  header {
+    padding: 1rem 2rem;
+  }
+
+  header nav a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .tag-header {
+    margin-bottom: 3rem;
+  }
+
+  .tag-header h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tag-header p {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+  }
+
+  .tag-news h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .no-news {
+    text-align: center;
+    color: var(--color-text-secondary);
+    padding: 3rem;
+  }
+</style>

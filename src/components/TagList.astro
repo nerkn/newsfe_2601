@@ -1,0 +1,65 @@
+---
+import type { Tag } from '@/types/db';
+
+interface Props {
+  tags: Tag[];
+  limit?: number;
+}
+
+const { tags, limit } = Astro.props;
+const displayTags = limit ? tags.slice(0, limit) : tags;
+---
+
+<nav class="tag-list">
+  <h2 class="tag-list__title">Categories</h2>
+  <ul class="tag-list__items">
+    {displayTags.map((tag) => (
+      <li class="tag-list__item">
+        <a href={`/tag/${tag.id}`} class="tag-list__link">
+          {tag.tag}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .tag-list {
+    margin-bottom: 2rem;
+  }
+
+  .tag-list__title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .tag-list__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .tag-list__item {
+    margin: 0;
+  }
+
+  .tag-list__link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background 0.2s;
+  }
+
+  .tag-list__link:hover {
+    background: var(--color-accent);
+    color: white;
+  }
+</style>
