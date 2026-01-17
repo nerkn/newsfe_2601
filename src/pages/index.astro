@@ -1,10 +1,9 @@
 ---
+import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchTags, fetchRecentNews, fetchSources, fetchNewsArticles, fetchNewsRawByIds } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
 import ArticleCluster from '@/components/ArticleCluster.astro';
 import TagList from '@/components/TagList.astro';
-import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
-import Footer from '@/components/Footer.astro';
 import type { Source } from '@/types/db';
 
 // Fetch data at build time
@@ -34,106 +33,41 @@ for (const article of newsArticles) {
 const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>News Site - Latest News</title>
-    <link rel="stylesheet" href="/src/styles/global.css" />
-  </head>
-  <body>
-    <header>
-      <nav>
-        <h1>News Site</h1>
-        <ul>
-          <li><a href="/">Home</a></li>
-          <li><a href="/tags">Tags</a></li>
-        </ul>
-        <ThemeSwitcher />
-      </nav>
-    </header>
+<Base title="News Site - Latest News" description="Stay updated with the latest news and articles" headerVariant="full">
+  <div class="page-content">
+    <section class="hero">
+      <h1>Latest News</h1>
+      <p>Stay updated with the latest news and articles</p>
+    </section>
 
-    <main>
-      <section class="hero">
-        <h1>Latest News</h1>
-        <p>Stay updated with the latest news and articles</p>
-      </section>
+    <TagList tags={tags} limit={20} />
 
-      <TagList tags={tags} limit={20} />
+    <section class="top-stories">
+      <h2>Top Stories</h2>
+      <div class="article-clusters">
+        {newsArticles.map((article) => (
+          <ArticleCluster
+            article={article}
+            rawItems={rawItems}
+            sources={sourcesMap}
+            maxItems={3}
+          />
+        ))}
+      </div>
+    </section>
 
-      <section class="top-stories">
-        <h2>Top Stories</h2>
-        <div class="article-clusters">
-          {newsArticles.map((article) => (
-            <ArticleCluster
-              article={article}
-              rawItems={rawItems}
-              sources={sourcesMap}
-              maxItems={3}
-            />
-          ))}
-        </div>
-      </section>
+    <section class="latest-news">
+      <h2>Latest Articles</h2>
+      <NewsGrid items={recentNews} sources={sourcesMap} columns={3} />
+    </section>
+  </div>
 
-      <section class="latest-news">
-        <h2>Latest Articles</h2>
-        <NewsGrid items={recentNews} sources={sourcesMap} columns={3} />
-      </section>
-    </main>
-
-    <Footer tags={tags} />
-
-    <!-- Client-side JavaScript for archive articles -->
-    <script type="module" src="./scripts/main.js"></script>
-  </body>
-</html>
+  <!-- Client-side JavaScript for archive articles -->
+  <script type="module" src="./scripts/main.js"></script>
+</Base>
 
 <style>
-  /* Global styles */
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, sans-serif;
-    color: var(--color-text);
-    background: var(--color-background);
-  }
-
-  header {
-    padding: 1rem 2rem;
-    border-bottom: 1px solid var(--color-surface);
-  }
-
-  header nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  header nav ul {
-    display: flex;
-    gap: 1rem;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  header nav a {
-    text-decoration: none;
-    color: var(--color-text);
-  }
-
-  header nav ul {
-    display: flex;
-    gap: 1rem;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    align-items: center;
-  }
-
-  main {
+  .page-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
@@ -164,12 +98,5 @@ const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
   .article-clusters {
     display: grid;
     gap: 1.5rem;
-  }
-
-  footer {
-    padding: 2rem;
-    text-align: center;
-    border-top: 1px solid var(--color-surface);
-    margin-top: 4rem;
   }
 </style>

@@ -1,13 +1,23 @@
 ---
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import { fetchTags } from '@/lib/api';
+
 interface Props {
   title?: string;
   description?: string;
+  headerVariant?: 'full' | 'minimal';
+  includeFooter?: boolean;
 }
 
 const {
   title = 'News Help',
   description = 'Latest news and articles',
+  headerVariant = 'full',
+  includeFooter = true,
 } = Astro.props;
+
+const tags = await fetchTags();
 ---
 
 <!doctype html>
@@ -37,6 +47,21 @@ const {
     <link rel="stylesheet" href="/src/styles/global.css" />
   </head>
   <body>
-    <slot />
+    <Header variant={headerVariant} />
+    <main><slot /></main>
+    {includeFooter && <Footer tags={tags} />}
   </body>
 </html>
+
+<style>
+  main {
+    min-height: calc(100vh - 200px);
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--color-text);
+    background: var(--color-background);
+  }
+</style>

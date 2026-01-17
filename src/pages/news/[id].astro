@@ -1,4 +1,5 @@
 ---
+import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsRawById, fetchSources } from '@/lib/api';
 import type { NewsRawItem, Source } from '@/types/db';
 
@@ -66,88 +67,61 @@ const processArticleContent = (content: string): string => {
 const processedContent = processArticleContent(item.article);
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{item.title} - News Site</title>
-    <meta name="description" content={item.article.slice(0, 160)} />
-    <link rel="stylesheet" href="/src/styles/global.css" />
+<Base title={`${item.title} - News Site`} description={item.article.slice(0, 160)} headerVariant="minimal" includeFooter={false}>
+  {item.imgUrl && <meta slot="head" property="og:image" content={item.imgUrl} />}
 
-    {item.imgUrl && <meta property="og:image" content={item.imgUrl} />}
-  </head>
-  <body>
-    <header>
-      <nav>
-        <a href="/">← Back to Home</a>
-      </nav>
+  <article class="article-full">
+    <header class="article-full__header">
+      <span class="article-full__source">{getSourceName(item.source)}</span>
+
+      <h1 class="article-full__title">{item.title}</h1>
+
+      <time class="article-full__date" datetime={item.created_at}>
+        {new Date(item.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </time>
+
+      {itemTags.length > 0 && (
+        <div class="article-full__tags">
+          {itemTags.map(
+            (tag) => (
+              <a href={`/tag/${tag.id}`} class="tag">
+                {tag.tag}
+              </a>
+            )
+          )}
+        </div>
+      )}
     </header>
 
-    <main>
-      <article class="article-full">
-        <header class="article-full__header">
-          <span class="article-full__source">{getSourceName(item.source)}</span>
+    {item.imgUrl && (
+      <div class="article-full__image">
+        <img src={item.imgUrl} alt={item.title} />
+      </div>
+    )}
 
-          <h1 class="article-full__title">{item.title}</h1>
+    <div class="article-full__content">
+      <div set:html={processedContent} />
+    </div>
 
-          <time class="article-full__date" datetime={item.created_at}>
-            {new Date(item.created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </time>
+    <footer class="article-full__footer">
+      <p>
+        Originally published by{' '}
+        <a href={getSourceLink(item.source)} target="_blank" rel="noopener noreferrer">
+          {getSourceName(item.source)}
+        </a>
+      </p>
+    </footer>
+  </article>
 
-          {itemTags.length > 0 && (
-            <div class="article-full__tags">
-              {itemTags.map(
-                (tag) => (
-                  <a href={`/tag/${tag.id}`} class="tag">
-                    {tag.tag}
-                  </a>
-                )
-              )}
-            </div>
-          )}
-        </header>
-
-        {item.imgUrl && (
-          <div class="article-full__image">
-            <img src={item.imgUrl} alt={item.title} />
-          </div>
-        )}
-
-        <div class="article-full__content">
-          <div set:html={processedContent} />
-        </div>
-
-        <footer class="article-full__footer">
-          <p>
-            Originally published by{' '}
-            <a href={getSourceLink(item.source)} target="_blank" rel="noopener noreferrer">
-              {getSourceName(item.source)}
-            </a>
-          </p>
-        </footer>
-      </article>
-    </main>
-
-    <script type="module" src="../scripts/main.js"></script>
-  </body>
-</html>
+  <script slot="main" type="module" src="../scripts/main.js"></script>
+</Base>
 
 <style>
-  header {
-    padding: 1rem 2rem;
-  }
-
-  header nav a {
-    text-decoration: none;
-    color: var(--color-text);
-  }
-
-  main {
+  .article-full {
     max-width: 42rem;
     margin: 0 auto;
     padding: 2rem 1rem;

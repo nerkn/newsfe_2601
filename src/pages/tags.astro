@@ -1,52 +1,35 @@
 ---
+import Base from '@/layouts/Base.astro';
 import { fetchTags } from '@/lib/api';
-import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
-import Footer from '@/components/Footer.astro';
 
 const tags = await fetchTags();
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>All Tags - News Site</title>
-    <link rel="stylesheet" href="/src/styles/global.css" />
-  </head>
-  <body>
-    <header>
-      <nav>
-        <h1>News Site</h1>
-        <ul>
-          <li><a href="/">Home</a></li>
-          <li><a href="/tags">Tags</a></li>
-        </ul>
-        <ThemeSwitcher />
-      </nav>
-    </header>
+<Base title="All Tags - News Site" description="Browse all news categories and topics">
+  <div class="page-content">
+    <section class="tags-page">
+      <h1>All Categories</h1>
+      <p class="tags-page__subtitle">Browse news by topic</p>
 
-    <main>
-      <section class="tags-page">
-        <h1>All Categories</h1>
-        <p class="tags-page__subtitle">Browse news by topic</p>
-
-        <div class="tags-grid">
-          {tags.map((tag) => (
-            <a href={`/tag/${tag.id}`} class="tag-card">
-              <h2>{tag.tag}</h2>
-              {tag.desc && <p>{tag.desc}</p>}
-            </a>
-          ))}
-        </div>
-      </section>
-    </main>
-
-    <Footer tags={tags} />
-  </body>
-</html>
+      <div class="tags-grid">
+        {tags.map((tag) => (
+          <a href={`/tag/${tag.id}`} class="tag-card">
+            <h2>{tag.tag}</h2>
+            {tag.desc && <p>{tag.desc}</p>}
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>
 
 <style>
+  .page-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
   .tags-page {
     text-align: center;
     margin-bottom: 3rem;

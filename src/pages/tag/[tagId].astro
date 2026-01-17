@@ -1,8 +1,7 @@
 ---
+import Base from '@/layouts/Base.astro';
 import { fetchTags, fetchNewsByTag, fetchSources } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
-import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
-import Footer from '@/components/Footer.astro';
 import type { Tag, Source } from '@/types/db';
 
 export async function getStaticPaths() {
@@ -35,54 +34,26 @@ const [news, sources] = await Promise.all([
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{tag.tag} - News Site</title>
-    <meta name="description" content={tag.desc} />
-    <link rel="stylesheet" href="/src/styles/global.css" />
-  </head>
-  <body>
-    <header>
-      <nav>
-        <a href="/">← Back to Home</a>
-        <ThemeSwitcher />
-      </nav>
-    </header>
+<Base title={`${tag.tag} - News Site`} description={tag.desc} headerVariant="minimal">
+  <div class="page-content">
+    <section class="tag-header">
+      <h1>{tag.tag}</h1>
+      {tag.desc && <p>{tag.desc}</p>}
+    </section>
 
-    <main>
-      <section class="tag-header">
-        <h1>{tag.tag}</h1>
-        {tag.desc && <p>{tag.desc}</p>}
-      </section>
+    <section class="tag-news">
+      <h2>Latest News</h2>
+      <NewsGrid items={news} sources={sourcesMap} columns={3} />
 
-      <section class="tag-news">
-        <h2>Latest News</h2>
-        <NewsGrid items={news} sources={sourcesMap} columns={3} />
+      {news.length === 0 && <p class="no-news">No news found for this tag.</p>}
+    </section>
+  </div>
 
-        {news.length === 0 && <p class="no-news">No news found for this tag.</p>}
-      </section>
-    </main>
-
-    <Footer tags={allTags} />
-
-    <script type="module" src="../scripts/main.js"></script>
-  </body>
-</html>
+  <script type="module" src="../scripts/main.js"></script>
+</Base>
 
 <style>
-  header {
-    padding: 1rem 2rem;
-  }
-
-  header nav a {
-    text-decoration: none;
-    color: var(--color-text);
-  }
-
-  main {
+  .page-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;

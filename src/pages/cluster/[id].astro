@@ -1,4 +1,5 @@
 ---
+import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsArticleById, fetchNewsRawByIds, fetchSources, fetchTags } from '@/lib/api';
 import type { Source, Tag } from '@/types/db';
 
@@ -83,95 +84,68 @@ const cleanTitle = (title: string): string => {
 };
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{cleanTitle(article.title)} - News Cluster</title>
-    <meta name="description" content={article.short_desc || cleanTitle(article.title)} />
-    <link rel="stylesheet" href="/src/styles/global.css" />
-  </head>
-  <body>
-    <header>
-      <nav>
-        <a href="/">← Back to Home</a>
-      </nav>
+<Base title={`${cleanTitle(article.title)} - News Cluster`} description={article.short_desc || cleanTitle(article.title)} headerVariant="minimal" includeFooter={false}>
+  <article class="cluster-full">
+    <header class="cluster-full__header">
+      <h1 class="cluster-full__title">{cleanTitle(article.title)}</h1>
+
+      {article.short_desc && (
+        <p class="cluster-full__description">{article.short_desc}</p>
+      )}
+
+      <time class="cluster-full__date" datetime={article.created_at}>
+        {formatDate(article.created_at)}
+      </time>
+
+      <div class="cluster-full__meta">
+        <span class="cluster-full__count">{rawItems.length} articles in this cluster</span>
+      </div>
+
+      {clusterTags.length > 0 && (
+        <div class="cluster-full__tags">
+          {clusterTags.map(
+            (tag) => (
+              <a href={`/tag/${tag.id}`} class="tag">
+                {tag.tag}
+              </a>
+            )
+          )}
+        </div>
+      )}
     </header>
 
-    <main>
-      <article class="cluster-full">
-        <header class="cluster-full__header">
-          <h1 class="cluster-full__title">{cleanTitle(article.title)}</h1>
-
-          {article.short_desc && (
-            <p class="cluster-full__description">{article.short_desc}</p>
-          )}
-
-          <time class="cluster-full__date" datetime={article.created_at}>
-            {formatDate(article.created_at)}
-          </time>
-
-          <div class="cluster-full__meta">
-            <span class="cluster-full__count">{rawItems.length} articles in this cluster</span>
-          </div>
-
-          {clusterTags.length > 0 && (
-            <div class="cluster-full__tags">
-              {clusterTags.map(
-                (tag) => (
-                  <a href={`/tag/${tag.id}`} class="tag">
-                    {tag.tag}
-                  </a>
-                )
-              )}
+    <div class="cluster-full__articles">
+      <h2 class="cluster-full__section-title">Articles in this Cluster</h2>
+      <div class="cluster-full__list">
+        {rawItems.map((item) => (
+          <a href={`/news/${item.id}`} class="cluster-article-card">
+            {item.imgUrl && (
+              <div class="cluster-article-card__image">
+                <img src={item.imgUrl} alt={item.title} loading="lazy" />
+              </div>
+            )}
+            <div class="cluster-article-card__content">
+              <span class="cluster-article-card__source">{getSourceName(item.source)}</span>
+              <h3 class="cluster-article-card__title">{cleanTitle(item.title)}</h3>
+              <time class="cluster-article-card__date" datetime={item.created_at}>
+                {formatDate(item.created_at)}
+              </time>
             </div>
-          )}
-        </header>
+          </a>
+        ))}
+      </div>
+    </div>
 
-        <div class="cluster-full__articles">
-          <h2 class="cluster-full__section-title">Articles in this Cluster</h2>
-          <div class="cluster-full__list">
-            {rawItems.map((item) => (
-              <a href={`/news/${item.id}`} class="cluster-article-card">
-                {item.imgUrl && (
-                  <div class="cluster-article-card__image">
-                    <img src={item.imgUrl} alt={item.title} loading="lazy" />
-                  </div>
-                )}
-                <div class="cluster-article-card__content">
-                  <span class="cluster-article-card__source">{getSourceName(item.source)}</span>
-                  <h3 class="cluster-article-card__title">{cleanTitle(item.title)}</h3>
-                  <time class="cluster-article-card__date" datetime={item.created_at}>
-                    {formatDate(item.created_at)}
-                  </time>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
+    <footer class="cluster-full__footer">
+      <a href="/">← Back to Home</a>
+    </footer>
+  </article>
 
-        <footer class="cluster-full__footer">
-          <a href="/">← Back to Home</a>
-        </footer>
-      </article>
-    </main>
-
-    <script type="module" src="../scripts/main.js"></script>
-  </body>
-</html>
+  <script slot="main" type="module" src="../scripts/main.js"></script>
+</Base>
 
 <style>
-  header {
-    padding: 1rem 2rem;
-  }
-
-  header nav a {
-    text-decoration: none;
-    color: var(--color-text);
-  }
-
-  main {
+  .cluster-full {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1rem;

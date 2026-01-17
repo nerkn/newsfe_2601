@@ -1,0 +1,67 @@
+---
+import ThemeSwitcher from './ThemeSwitcher.astro';
+
+interface Props {
+  variant?: 'full' | 'minimal';
+}
+
+const { variant = 'full' } = Astro.props;
+---
+
+<header>
+  <nav>
+    {variant === 'full' ? (
+      <>
+        <h1>News Site</h1>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/tags">Tags</a></li>
+        </ul>
+        <ThemeSwitcher />
+      </>
+    ) : (
+      <>
+        <a href="/">← Back to Home</a>
+        <ThemeSwitcher />
+      </>
+    )}
+  </nav>
+</header>
+
+<style>
+  header {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--color-surface);
+  }
+
+  header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header nav h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  header nav ul {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    align-items: center;
+  }
+
+  header nav a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  header nav ul li a:hover {
+    color: var(--color-primary);
+  }
+</style>
