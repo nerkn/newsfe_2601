@@ -1,5 +1,6 @@
 ---
 import type { Tag } from '@/types/db';
+import { slugify } from '@/lib/utils';
 
 interface Props {
   tags: Tag[];
@@ -28,7 +29,7 @@ const getParentTags = (tag: Tag, allTags: Tag[]): Tag[] => {
       const parents = getParentTags(tag, tags);
       return (
         <li class="tag-list__item">
-          <a href={`/tag/${tag.id}`} class="tag-list__link">
+          <a href={`/tag/${slugify(tag.tag)}`} class="tag-list__link">
             {parents.length > 0 && (
               <span class="tag-list__parents">
                 {parents.map(p => (

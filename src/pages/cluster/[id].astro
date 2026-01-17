@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsArticleById, fetchNewsRawByIds, fetchSources, fetchTags } from '@/lib/api';
-import { formatDate, getSourceName, getSourceLink, processArticleContent, cleanTitle } from '@/lib/utils';
+import { formatDate, getSourceName, getSourceLink, processArticleContent, cleanTitle, slugify } from '@/lib/utils';
 import type { Source, Tag } from '@/types/db';
 
 export async function getStaticPaths() {
@@ -67,7 +67,7 @@ const processedShortDesc = article.short_desc ? processArticleContent(article.sh
         <div class="cluster-full__tags">
           {clusterTags.map(
             (tag) => (
-              <a href={`/tag/${tag.id}`} class="tag">
+              <a href={`/tag/${slugify(tag.tag)}`} class="tag">
                 {tag.tag}
               </a>
             )

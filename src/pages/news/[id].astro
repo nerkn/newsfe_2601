@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsRawById, fetchSources } from '@/lib/api';
-import { getSourceName, getSourceLink, processArticleContent } from '@/lib/utils';
+import { getSourceName, getSourceLink, processArticleContent, slugify } from '@/lib/utils';
 import type { NewsRawItem, Source } from '@/types/db';
 
 export async function getStaticPaths() {
@@ -62,7 +62,7 @@ const processedContent = processArticleContent(item.article);
         <div class="article-full__tags">
           {itemTags.map(
             (tag) => (
-              <a href={`/tag/${tag.id}`} class="tag">
+              <a href={`/tag/${slugify(tag.tag)}`} class="tag">
                 {tag.tag}
               </a>
             )

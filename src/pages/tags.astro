@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { fetchTags } from '@/lib/api';
+import { slugify } from '@/lib/utils';
 
 const tags = await fetchTags();
 ---
@@ -13,9 +14,8 @@ const tags = await fetchTags();
 
       <div class="tags-grid">
         {tags.map((tag) => (
-          <a href={`/tag/${tag.id}`} class="tag-card">
+          <a href={`/tag/${slugify(tag.tag)}`} class="tag-card">
             <h2>{tag.tag}</h2>
-            {tag.desc && <p>{tag.desc}</p>}
           </a>
         ))}
       </div>
@@ -70,15 +70,8 @@ const tags = await fetchTags();
   }
 
   .tag-card h2 {
-    margin: 0 0 0.5rem 0;
+    margin: 0;
     font-size: 1.25rem;
     color: var(--color-primary);
-  }
-
-  .tag-card p {
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    line-height: 1.5;
   }
 </style>

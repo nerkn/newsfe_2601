@@ -2,27 +2,20 @@
 import Base from '@/layouts/Base.astro';
 import { fetchTags, fetchNewsByTag, fetchSources } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
+import { slugify } from '@/lib/utils';
 import type { Tag, Source } from '@/types/db';
 
 export async function getStaticPaths() {
   const tags = await fetchTags();
 
   return tags.map((tag) => ({
-    params: { tagId: tag.id.toString() },
+    params: { slug: slugify(tag.tag) },
     props: { tag },
   }));
 }
 
-const { tagId } = Astro.params;
+const { tag } = Astro.props;
 const { fetchTags: getTags, fetchNewsByTag: getNewsByTag, fetchSources: getSources } = await import('@/lib/api');
-
-// Get tag info
-const allTags = await getTags();
-const tag = allTags.find((t) => t.id === parseInt(tagId));
-
-if (!tag) {
-  return Astro.redirect('/404');
-}
 
 // Get news and sources for this tag
 const [news, sources] = await Promise.all([
@@ -34,11 +27,11 @@ const [news, sources] = await Promise.all([
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 ---
 
-<Base title={`${tag.tag} - News Site`} description={tag.desc} headerVariant="minimal">
+<Base title={`${tag.tag} - News Site`} description={tag.desc || `Latest news about ${tag.tag}`} headerVariant="minimal">
   <div class="page-content">
     <section class="tag-header">
       <h1>{tag.tag}</h1>
-      {tag.desc && <p>{tag.desc}</p>}
+      {tag.desc && <p class="tag-description">{tag.desc}</p>}
     </section>
 
     <section class="tag-news">
@@ -49,7 +42,7 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
     </section>
   </div>
 
-  <script type="module" src="../scripts/main.js"></script>
+  <script slot="main" type="module" src="../scripts/main.js"></script>
 </Base>
 
 <style>
@@ -60,7 +53,7 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
   }
 
   .tag-header {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
 
   .tag-header h1 {
@@ -68,9 +61,11 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
     margin-bottom: 0.5rem;
   }
 
-  .tag-header p {
+  .tag-description {
     font-size: 1.25rem;
     color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.6;
   }
 
   .tag-news h2 {

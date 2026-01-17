@@ -1,5 +1,6 @@
 ---
 import type { Tag } from '@/types/db';
+import { slugify } from '@/lib/utils';
 
 interface Props {
   tags: Tag[];
@@ -40,13 +41,13 @@ const getChildren = (parentId: number): Tag[] => {
       <div class="footer__categories">
         {topLevelTags.map(tag => (
           <div class="footer__category-group">
-            <a href={`/tag/${tag.id}`} class="footer__category-link footer__category-link--parent">
+            <a href={`/tag/${slugify(tag.tag)}`} class="footer__category-link footer__category-link--parent">
               {tag.tag}
             </a>
             {hasChildren(tag.id) && (
               <div class="footer__subcategories">
                 {getChildren(tag.id).map(child => (
-                  <a href={`/tag/${child.id}`} class="footer__category-link footer__category-link--child">
+                  <a href={`/tag/${slugify(child.tag)}`} class="footer__category-link footer__category-link--child">
                     {child.tag}
                   </a>
                 ))}
