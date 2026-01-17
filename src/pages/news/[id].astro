@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsRawById, fetchSources } from '@/lib/api';
+import { getSourceName, getSourceLink, processArticleContent } from '@/lib/utils';
 import type { NewsRawItem, Source } from '@/types/db';
 
 export async function getStaticPaths() {
@@ -37,33 +38,6 @@ const itemTags = allTags.filter((tag) => item.cats.includes(tag.id));
 // Create sources map
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 
-// Helper to get source name
-const getSourceName = (sourceId: string): string => {
-  const id = parseInt(sourceId);
-  const source = sourcesMap.get(id);
-  return source?.title || sourceId;
-};
-
-// Helper to get source link
-const getSourceLink = (sourceId: string): string => {
-  const id = parseInt(sourceId);
-  const source = sourcesMap.get(id);
-  return source?.link || '#';
-};
-
-// Process article content to convert [number] references to links
-// Handles [3333] and [3333,3334] formats
-const processArticleContent = (content: string): string => {
-  // Replace patterns like [3333] or [3333,3334,3335] with links
-  return content.replace(/\[(\d+(?:,\d+)*)\]/g, (match, idsStr) => {
-    const ids = idsStr.split(',').map(id => id.trim());
-    const links = ids.map(id => {
-      return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
-    });
-    return links.join(' ');
-  });
-};
-
 const processedContent = processArticleContent(item.article);
 ---
 
@@ -72,7 +46,7 @@ const processedContent = processArticleContent(item.article);
 
   <article class="article-full">
     <header class="article-full__header">
-      <span class="article-full__source">{getSourceName(item.source)}</span>
+      <span class="article-full__source">{getSourceName(item.source, sourcesMap)}</span>
 
       <h1 class="article-full__title">{item.title}</h1>
 
@@ -110,8 +84,8 @@ const processedContent = processArticleContent(item.article);
     <footer class="article-full__footer">
       <p>
         Originally published by{' '}
-        <a href={getSourceLink(item.source)} target="_blank" rel="noopener noreferrer">
-          {getSourceName(item.source)}
+        <a href={getSourceLink(item.source, sourcesMap)} target="_blank" rel="noopener noreferrer">
+          {getSourceName(item.source, sourcesMap)}
         </a>
       </p>
     </footer>

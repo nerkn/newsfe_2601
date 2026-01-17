@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsArticleById, fetchNewsRawByIds, fetchSources, fetchTags } from '@/lib/api';
+import { formatDate, getSourceName, getSourceLink, processArticleContent, cleanTitle } from '@/lib/utils';
 import type { Source, Tag } from '@/types/db';
 
 export async function getStaticPaths() {
@@ -41,47 +42,8 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 // Get tags for this cluster
 const clusterTags = allTags.filter((tag) => article.cats.includes(tag.id));
 
-// Format date
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
-
-// Get source name
-const getSourceName = (sourceId: string): string => {
-  const id = parseInt(sourceId);
-  const source = sourcesMap.get(id);
-  return source?.title || sourceId;
-};
-
-// Get source link
-const getSourceLink = (sourceId: string): string => {
-  const id = parseInt(sourceId);
-  const source = sourcesMap.get(id);
-  return source?.link || '#';
-};
-
-// Process article content to convert [number] references to links
-// Handles [3333] and [3333,3334] formats
-const processArticleContent = (content: string): string => {
-  // Replace patterns like [3333] or [3333,3334,3335] with links
-  return content.replace(/\[(\d+(?:,\d+)*)\]/g, (match, idsStr) => {
-    const ids = idsStr.split(',').map(id => id.trim());
-    const links = ids.map(id => {
-      return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
-    });
-    return links.join(' ');
-  });
-};
-
-// Remove markdown bold
-const cleanTitle = (title: string): string => {
-  return title.replace(/\*\*/g, '');
-};
+// Process short_desc to convert article references to links
+const processedShortDesc = article.short_desc ? processArticleContent(article.short_desc) : '';
 ---
 
 <Base title={`${cleanTitle(article.title)} - News Cluster`} description={article.short_desc || cleanTitle(article.title)} headerVariant="minimal" includeFooter={false}>
@@ -89,8 +51,8 @@ const cleanTitle = (title: string): string => {
     <header class="cluster-full__header">
       <h1 class="cluster-full__title">{cleanTitle(article.title)}</h1>
 
-      {article.short_desc && (
-        <p class="cluster-full__description">{article.short_desc}</p>
+      {processedShortDesc && (
+        <p class="cluster-full__description" set:html={processedShortDesc} />
       )}
 
       <time class="cluster-full__date" datetime={article.created_at}>
@@ -125,7 +87,7 @@ const cleanTitle = (title: string): string => {
               </div>
             )}
             <div class="cluster-article-card__content">
-              <span class="cluster-article-card__source">{getSourceName(item.source)}</span>
+              <span class="cluster-article-card__source">{getSourceName(item.source, sourcesMap)}</span>
               <h3 class="cluster-article-card__title">{cleanTitle(item.title)}</h3>
               <time class="cluster-article-card__date" datetime={item.created_at}>
                 {formatDate(item.created_at)}
@@ -167,6 +129,20 @@ const cleanTitle = (title: string): string => {
     color: var(--color-text-secondary);
     line-height: 1.6;
     margin-bottom: 1rem;
+  }
+
+  .cluster-full__description :global(.article-ref) {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0 0.125rem;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+  }
+
+  .cluster-full__description :global(.article-ref:hover) {
+    background-color: var(--color-surface);
+    text-decoration: underline;
   }
 
   .cluster-full__date {
