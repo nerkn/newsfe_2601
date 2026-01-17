@@ -1,5 +1,6 @@
 ---
 import type { NewsArticle, NewsRawItem, Source } from '@/types/db';
+import { formatDate, getSourceName, cleanTitle, processArticleContent } from '@/lib/utils';
 
 interface Props {
   article: NewsArticle;
@@ -14,27 +15,8 @@ const { article, rawItems, sources, maxItems = 3 } = Astro.props;
 const articleItems = rawItems.filter(item => article.articles.includes(item.id));
 const displayItems = articleItems.slice(0, maxItems);
 
-// Format date
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-// Get source name
-const getSourceName = (sourceId: string): string => {
-  const id = parseInt(sourceId);
-  const source = sources?.get(id);
-  return source?.title || sourceId;
-};
-
-// Remove markdown bold
-const cleanTitle = (title: string): string => {
-  return title.replace(/\*\*/g, '');
-};
+// Process short_desc to convert article references to links
+const processedShortDesc = article.short_desc ? processArticleContent(article.short_desc) : '';
 ---
 
 <div class="article-cluster">
@@ -42,8 +24,8 @@ const cleanTitle = (title: string): string => {
     <a href={`/cluster/${article.id}`}>{cleanTitle(article.title)}</a>
   </h2>
 
-  {article.short_desc && (
-    <p class="article-cluster__description">{article.short_desc}</p>
+  {processedShortDesc && (
+    <p class="article-cluster__description" set:html={processedShortDesc} />
   )}
 
   <div class="article-cluster__sources">
@@ -59,7 +41,7 @@ const cleanTitle = (title: string): string => {
           </div>
         )}
         <div class="article-cluster__item-content">
-          <span class="article-cluster__item-source">{getSourceName(item.source)}</span>
+          <span class="article-cluster__item-source">{getSourceName(item.source, sources)}</span>
           <h3 class="article-cluster__item-title">{cleanTitle(item.title)}</h3>
         </div>
       </a>
@@ -101,6 +83,22 @@ const cleanTitle = (title: string): string => {
     font-size: 0.875rem;
     margin-bottom: 0.75rem;
     line-height: 1.5;
+    white-space: pre-line;
+  }
+
+  .article-cluster__description :global(a) {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+    background: var(--color-surface);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .article-cluster__description :global(a:hover) {
+    background: var(--color-primary);
+    color: white;
   }
 
   .article-cluster__sources {
