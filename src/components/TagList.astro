@@ -8,18 +8,40 @@ interface Props {
 
 const { tags, limit } = Astro.props;
 const displayTags = limit ? tags.slice(0, limit) : tags;
+
+// Helper to check if tag has parent
+const hasParent = (tag: Tag): boolean => {
+  return tag.parent && tag.parent.length > 0;
+};
+
+// Helper to get parent tags
+const getParentTags = (tag: Tag, allTags: Tag[]): Tag[] => {
+  if (!tag.parent || tag.parent.length === 0) return [];
+  return allTags.filter(t => tag.parent.includes(t.id));
+};
 ---
 
 <nav class="tag-list">
   <h2 class="tag-list__title">Categories</h2>
   <ul class="tag-list__items">
-    {displayTags.map((tag) => (
-      <li class="tag-list__item">
-        <a href={`/tag/${tag.id}`} class="tag-list__link">
-          {tag.tag}
-        </a>
-      </li>
-    ))}
+    {displayTags.map((tag) => {
+      const parents = getParentTags(tag, tags);
+      return (
+        <li class="tag-list__item">
+          <a href={`/tag/${tag.id}`} class="tag-list__link">
+            {parents.length > 0 && (
+              <span class="tag-list__parents">
+                {parents.map(p => (
+                  <span class="tag-list__parent">{p.tag}</span>
+                ))}
+                <span class="tag-list__separator">›</span>
+              </span>
+            )}
+            <span class="tag-list__name">{tag.tag}</span>
+          </a>
+        </li>
+      );
+    })}
   </ul>
 </nav>
 
@@ -61,5 +83,23 @@ const displayTags = limit ? tags.slice(0, limit) : tags;
   .tag-list__link:hover {
     background: var(--color-accent);
     color: white;
+  }
+
+  .tag-list__parents {
+    font-size: 0.75em;
+    opacity: 0.7;
+    margin-right: 0.25em;
+  }
+
+  .tag-list__parent {
+    color: var(--color-text-secondary);
+  }
+
+  .tag-list__separator {
+    margin: 0 0.25em;
+  }
+
+  .tag-list__name {
+    font-weight: 500;
   }
 </style>

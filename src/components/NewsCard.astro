@@ -33,6 +33,11 @@ const truncate = (text: string, maxLength: number) => {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength).trim() + '...';
 };
+
+// Remove markdown bold syntax from title
+const cleanTitle = (title: string): string => {
+  return title.replace(/\*\*/g, '');
+};
 ---
 
 <article class="news-card">
@@ -46,7 +51,7 @@ const truncate = (text: string, maxLength: number) => {
     {showSource && <span class="news-card__source">{getSourceName(item.source)}</span>}
 
     <h3 class="news-card__title">
-      <a href={`/news/${item.id}`}>{item.title}</a>
+      <a href={`/news/${item.id}`}>{cleanTitle(item.title)}</a>
     </h3>
 
     <p class="news-card__excerpt">{truncate(item.article, 150)}</p>

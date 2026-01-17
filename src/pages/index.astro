@@ -1,8 +1,10 @@
 ---
-import { fetchMeta, fetchTags, fetchRecentNews, fetchSources } from '@/lib/api';
+import { fetchMeta, fetchTags, fetchRecentNews, fetchSources, fetchNewsArticles, fetchNewsRawByIds } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
+import ArticleCluster from '@/components/ArticleCluster.astro';
 import TagList from '@/components/TagList.astro';
 import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
+import Footer from '@/components/Footer.astro';
 import type { Source } from '@/types/db';
 
 // Fetch data at build time
@@ -13,8 +15,23 @@ const [meta, tags, recentNews, sources] = await Promise.all([
   fetchSources(),
 ]);
 
+// Fetch news articles (with latest ID for batching)
+let newsArticles = await fetchNewsArticles(meta.tables.news_articles.latest_id, 10);
+
+// Sort articles by ID descending (newest first)
+newsArticles = newsArticles.sort((a, b) => b.id - a.id);
+
 // Create sources map for quick lookup
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
+
+// Get all raw article IDs from the articles
+const allRawIds: number[] = [];
+for (const article of newsArticles) {
+  allRawIds.push(...article.articles.slice(0, 3)); // Take 3 per cluster
+}
+
+// Fetch the raw items
+const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
 ---
 
 <!doctype html>
@@ -45,15 +62,27 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 
       <TagList tags={tags} limit={20} />
 
+      <section class="top-stories">
+        <h2>Top Stories</h2>
+        <div class="article-clusters">
+          {newsArticles.map((article) => (
+            <ArticleCluster
+              article={article}
+              rawItems={rawItems}
+              sources={sourcesMap}
+              maxItems={3}
+            />
+          ))}
+        </div>
+      </section>
+
       <section class="latest-news">
         <h2>Latest Articles</h2>
         <NewsGrid items={recentNews} sources={sourcesMap} columns={3} />
       </section>
     </main>
 
-    <footer>
-      <p>&copy; {new Date().getFullYear()} News Site</p>
-    </footer>
+    <Footer tags={tags} />
 
     <!-- Client-side JavaScript for archive articles -->
     <script type="module" src="./scripts/main.js"></script>
@@ -122,6 +151,19 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 
   .latest-news h2 {
     margin-bottom: 1.5rem;
+  }
+
+  .top-stories {
+    margin-bottom: 3rem;
+  }
+
+  .top-stories h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .article-clusters {
+    display: grid;
+    gap: 1.5rem;
   }
 
   footer {

@@ -1,0 +1,189 @@
+---
+import type { Tag } from '@/types/db';
+
+interface Props {
+  tags: Tag[];
+}
+
+const { tags } = Astro.props;
+
+// Group tags by parent (top-level categories)
+const topLevelTags = tags.filter(tag => !tag.parent || tag.parent.length === 0);
+const childTags = tags.filter(tag => tag.parent && tag.parent.length > 0);
+
+// Group child tags by their parent as a simple object
+const groupedTags: Record<number, Tag[]> = {};
+for (const child of childTags) {
+  for (const parentId of child.parent) {
+    if (!groupedTags[parentId]) {
+      groupedTags[parentId] = [];
+    }
+    groupedTags[parentId].push(child);
+  }
+}
+
+// Helper to check if parent has children
+const hasChildren = (parentId: number): boolean => {
+  return groupedTags[parentId] && groupedTags[parentId].length > 0;
+};
+
+// Helper to get children for a parent
+const getChildren = (parentId: number): Tag[] => {
+  return groupedTags[parentId] || [];
+};
+---
+
+<footer class="site-footer">
+  <div class="footer__content">
+    <div class="footer__section">
+      <h3 class="footer__title">Categories</h3>
+      <div class="footer__categories">
+        {topLevelTags.map(tag => (
+          <div class="footer__category-group">
+            <a href={`/tag/${tag.id}`} class="footer__category-link footer__category-link--parent">
+              {tag.tag}
+            </a>
+            {hasChildren(tag.id) && (
+              <div class="footer__subcategories">
+                {getChildren(tag.id).map(child => (
+                  <a href={`/tag/${child.id}`} class="footer__category-link footer__category-link--child">
+                    {child.tag}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer__section">
+      <h3 class="footer__title">Quick Links</h3>
+      <ul class="footer__links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/tags">All Categories</a></li>
+      </ul>
+    </div>
+
+    <div class="footer__section">
+      <h3 class="footer__title">About</h3>
+      <p class="footer__text">
+        Latest news from around the world, aggregated from multiple sources.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer__bottom">
+    <p>&copy; {new Date().getFullYear()} News Site. All rights reserved.</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    margin-top: 4rem;
+    padding: 3rem 2rem 2rem;
+  }
+
+  .footer__content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+
+  .footer__section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .footer__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  .footer__categories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .footer__category-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .footer__category-link {
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: color 0.2s;
+    font-size: 0.875rem;
+  }
+
+  .footer__category-link--parent {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .footer__category-link--child {
+    padding-left: 1rem;
+  }
+
+  .footer__category-link:hover {
+    color: var(--color-primary);
+  }
+
+  .footer__subcategories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .footer__links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .footer__links a {
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: color 0.2s;
+  }
+
+  .footer__links a:hover {
+    color: var(--color-primary);
+  }
+
+  .footer__text {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .footer__bottom {
+    max-width: 1200px;
+    margin: 2rem auto 0;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 768px) {
+    .footer__content {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

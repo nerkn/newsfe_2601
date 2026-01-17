@@ -1,6 +1,7 @@
 ---
 import { fetchTags } from '@/lib/api';
 import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
+import Footer from '@/components/Footer.astro';
 
 const tags = await fetchTags();
 ---
@@ -41,9 +42,7 @@ const tags = await fetchTags();
       </section>
     </main>
 
-    <footer>
-      <p>&copy; {new Date().getFullYear()} News Site</p>
-    </footer>
+    <Footer tags={tags} />
   </body>
 </html>
 

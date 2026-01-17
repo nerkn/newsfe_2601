@@ -1,6 +1,8 @@
 ---
 import { fetchTags, fetchNewsByTag, fetchSources } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
+import ThemeSwitcher from '@/components/ThemeSwitcher.astro';
+import Footer from '@/components/Footer.astro';
 import type { Tag, Source } from '@/types/db';
 
 export async function getStaticPaths() {
@@ -46,6 +48,7 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
     <header>
       <nav>
         <a href="/">← Back to Home</a>
+        <ThemeSwitcher />
       </nav>
     </header>
 
@@ -62,6 +65,8 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
         {news.length === 0 && <p class="no-news">No news found for this tag.</p>}
       </section>
     </main>
+
+    <Footer tags={allTags} />
 
     <script type="module" src="../scripts/main.js"></script>
   </body>

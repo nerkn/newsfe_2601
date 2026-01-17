@@ -1,0 +1,188 @@
+---
+import type { NewsArticle, NewsRawItem, Source } from '@/types/db';
+
+interface Props {
+  article: NewsArticle;
+  rawItems: NewsRawItem[];
+  sources: Map<number, Source>;
+  maxItems?: number;
+}
+
+const { article, rawItems, sources, maxItems = 3 } = Astro.props;
+
+// Get raw items that belong to this article cluster
+const articleItems = rawItems.filter(item => article.articles.includes(item.id));
+const displayItems = articleItems.slice(0, maxItems);
+
+// Format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+// Get source name
+const getSourceName = (sourceId: string): string => {
+  const id = parseInt(sourceId);
+  const source = sources?.get(id);
+  return source?.title || sourceId;
+};
+
+// Remove markdown bold
+const cleanTitle = (title: string): string => {
+  return title.replace(/\*\*/g, '');
+};
+---
+
+<div class="article-cluster">
+  <h2 class="article-cluster__title">
+    <a href={`/cluster/${article.id}`}>{cleanTitle(article.title)}</a>
+  </h2>
+
+  {article.short_desc && (
+    <p class="article-cluster__description">{article.short_desc}</p>
+  )}
+
+  <div class="article-cluster__sources">
+    <span class="article-cluster__count">{articleItems.length} sources</span>
+  </div>
+
+  <div class="article-cluster__items">
+    {displayItems.map(item => (
+      <a href={`/news/${item.id}`} class="article-cluster__item">
+        {item.imgUrl && (
+          <div class="article-cluster__item-image">
+            <img src={item.imgUrl} alt={item.title} loading="lazy" />
+          </div>
+        )}
+        <div class="article-cluster__item-content">
+          <span class="article-cluster__item-source">{getSourceName(item.source)}</span>
+          <h3 class="article-cluster__item-title">{cleanTitle(item.title)}</h3>
+        </div>
+      </a>
+    ))}
+  </div>
+
+  <time class="article-cluster__date" datetime={article.created_at}>
+    {formatDate(article.created_at)}
+  </time>
+</div>
+
+<style>
+  .article-cluster {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--color-border);
+  }
+
+  .article-cluster__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+
+  .article-cluster__title a {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .article-cluster__title a:hover {
+    color: var(--color-primary);
+  }
+
+  .article-cluster__description {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .article-cluster__sources {
+    margin-bottom: 1rem;
+  }
+
+  .article-cluster__count {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--color-primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .article-cluster__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .article-cluster__item {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    transition: all 0.2s;
+  }
+
+  .article-cluster__item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+  }
+
+  .article-cluster__item-image {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .article-cluster__item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .article-cluster__item-content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .article-cluster__item-source {
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .article-cluster__item-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .article-cluster__date {
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+  }
+
+  @media (max-width: 640px) {
+    .article-cluster__items {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

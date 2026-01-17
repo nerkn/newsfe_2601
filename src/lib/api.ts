@@ -246,5 +246,7 @@ export async function fetchRecentNews(limit: number = 20): Promise<NewsRawItem[]
     results.push(...batch);
   }
 
-  return results.slice(0, limit);
+  // Sort by ID descending (newest first) and limit
+  const sorted = results.sort((a, b) => b.id - a.id);
+  return sorted.slice(0, limit);
 }
