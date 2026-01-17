@@ -1,0 +1,17 @@
+{
+  "name": "newsfe2601",
+  "compatibility_date": "2026-01-11",
+
+  "pages_build_output_dir": "./dist",
+
+  "build": {
+    "command": "npm run build",
+    "watch_dir": "*"
+  },
+
+  "vars": {
+    "NEWS_API_BASE_URL": "https://api.newshelp.org",
+    "NEWS_API_TIMEOUT": "30000",
+    "NEWS_STATIC_ARTICLE_LIMIT": "100"
+  }
+}
