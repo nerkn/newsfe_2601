@@ -1,0 +1,323 @@
+---
+import { fetchMeta, fetchNewsArticleById, fetchNewsRawByIds, fetchSources, fetchTags } from '@/lib/api';
+import type { Source, Tag } from '@/types/db';
+
+export async function getStaticPaths() {
+  // Fetch metadata to get latest cluster ID
+  const meta = await fetchMeta();
+  const latestId = meta.tables.news_articles.latest_id;
+
+  // Generate static pages for last 100 clusters
+  const staticLimit = 100;
+  const paths = [];
+
+  for (let id = latestId; id > latestId - staticLimit && id > 0; id--) {
+    paths.push({
+      params: { id: id.toString() },
+    });
+  }
+
+  return paths;
+}
+
+const { id } = Astro.params;
+const article = await fetchNewsArticleById(parseInt(id));
+
+// Handle 404
+if (!article) {
+  return Astro.redirect('/404');
+}
+
+// Fetch all raw items for this cluster
+const rawItems = await fetchNewsRawByIds(article.articles);
+
+// Fetch sources and tags
+const [sources, allTags] = await Promise.all([fetchSources(), fetchTags()]);
+
+// Create sources map for quick lookup
+const sourcesMap = new Map(sources.map((s) => [s.id, s]));
+
+// Get tags for this cluster
+const clusterTags = allTags.filter((tag) => article.cats.includes(tag.id));
+
+// Format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+// Get source name
+const getSourceName = (sourceId: string): string => {
+  const id = parseInt(sourceId);
+  const source = sourcesMap.get(id);
+  return source?.title || sourceId;
+};
+
+// Get source link
+const getSourceLink = (sourceId: string): string => {
+  const id = parseInt(sourceId);
+  const source = sourcesMap.get(id);
+  return source?.link || '#';
+};
+
+// Process article content to convert [number] references to links
+// Handles [3333] and [3333,3334] formats
+const processArticleContent = (content: string): string => {
+  // Replace patterns like [3333] or [3333,3334,3335] with links
+  return content.replace(/\[(\d+(?:,\d+)*)\]/g, (match, idsStr) => {
+    const ids = idsStr.split(',').map(id => id.trim());
+    const links = ids.map(id => {
+      return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
+    });
+    return links.join(' ');
+  });
+};
+
+// Remove markdown bold
+const cleanTitle = (title: string): string => {
+  return title.replace(/\*\*/g, '');
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{cleanTitle(article.title)} - News Cluster</title>
+    <meta name="description" content={article.short_desc || cleanTitle(article.title)} />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">← Back to Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <article class="cluster-full">
+        <header class="cluster-full__header">
+          <h1 class="cluster-full__title">{cleanTitle(article.title)}</h1>
+
+          {article.short_desc && (
+            <p class="cluster-full__description">{article.short_desc}</p>
+          )}
+
+          <time class="cluster-full__date" datetime={article.created_at}>
+            {formatDate(article.created_at)}
+          </time>
+
+          <div class="cluster-full__meta">
+            <span class="cluster-full__count">{rawItems.length} articles in this cluster</span>
+          </div>
+
+          {clusterTags.length > 0 && (
+            <div class="cluster-full__tags">
+              {clusterTags.map(
+                (tag) => (
+                  <a href={`/tag/${tag.id}`} class="tag">
+                    {tag.tag}
+                  </a>
+                )
+              )}
+            </div>
+          )}
+        </header>
+
+        <div class="cluster-full__articles">
+          <h2 class="cluster-full__section-title">Articles in this Cluster</h2>
+          <div class="cluster-full__list">
+            {rawItems.map((item) => (
+              <a href={`/news/${item.id}`} class="cluster-article-card">
+                {item.imgUrl && (
+                  <div class="cluster-article-card__image">
+                    <img src={item.imgUrl} alt={item.title} loading="lazy" />
+                  </div>
+                )}
+                <div class="cluster-article-card__content">
+                  <span class="cluster-article-card__source">{getSourceName(item.source)}</span>
+                  <h3 class="cluster-article-card__title">{cleanTitle(item.title)}</h3>
+                  <time class="cluster-article-card__date" datetime={item.created_at}>
+                    {formatDate(item.created_at)}
+                  </time>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <footer class="cluster-full__footer">
+          <a href="/">← Back to Home</a>
+        </footer>
+      </article>
+    </main>
+
+    <script type="module" src="../scripts/main.js"></script>
+  </body>
+</html>
+
+<style>
+  header {
+    padding: 1rem 2rem;
+  }
+
+  header nav a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .cluster-full__header {
+    margin-bottom: 3rem;
+  }
+
+  .cluster-full__title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .cluster-full__description {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .cluster-full__date {
+    display: block;
+    color: var(--color-text-tertiary);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .cluster-full__meta {
+    margin-bottom: 1rem;
+  }
+
+  .cluster-full__count {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--color-primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .cluster-full__tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .cluster-full__tags .tag {
+    padding: 0.25rem 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  .cluster-full__section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .cluster-full__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .cluster-article-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all 0.2s;
+  }
+
+  .cluster-article-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+  }
+
+  .cluster-article-card__image {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .cluster-article-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cluster-article-card__content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .cluster-article-card__source {
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .cluster-article-card__title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .cluster-article-card__date {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .cluster-full__footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-surface);
+  }
+
+  .cluster-full__footer a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  .cluster-full__footer a:hover {
+    color: var(--color-primary);
+  }
+
+  @media (max-width: 768px) {
+    .cluster-full__list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

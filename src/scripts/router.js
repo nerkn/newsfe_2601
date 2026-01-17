@@ -1,7 +1,8 @@
-import { renderArticle } from './renderer.js';
+import { renderArticle, renderCluster } from './renderer.js';
 
-// Cache for loaded articles
-const cache = new Map();
+// Cache for loaded pages
+const articleCache = new Map();
+const clusterCache = new Map();
 
 /**
  * Initialize client-side router
@@ -33,14 +34,34 @@ function handleLinkClick(event) {
     const id = parseInt(newsMatch[1]);
 
     // Check if cache has it
-    if (cache.has(id)) {
-      history.pushState({ id }, '', href);
+    if (articleCache.has(id)) {
+      history.pushState({ id, type: 'article' }, '', href);
       return;
     }
 
     // Try navigation first (for static pages)
     // If 404, render client-side
     navigateToArticle(id, href);
+    return;
+  }
+
+  // Check if it's a cluster link
+  const clusterMatch = href?.match(/^\/cluster\/(\d+)$/);
+
+  if (clusterMatch) {
+    event.preventDefault();
+
+    const id = parseInt(clusterMatch[1]);
+
+    // Check if cache has it
+    if (clusterCache.has(id)) {
+      history.pushState({ id, type: 'cluster' }, '', href);
+      return;
+    }
+
+    // Try navigation first (for static pages)
+    // If 404, render client-side
+    navigateToCluster(id, href);
   }
 }
 
@@ -63,16 +84,42 @@ async function navigateToArticle(id, url) {
 
   // Static page doesn't exist, render client-side
   await renderArticle(id);
-  cache.set(id, true);
+  articleCache.set(id, true);
+}
+
+/**
+ * Navigate to cluster
+ */
+async function navigateToCluster(id, url) {
+  // Try normal navigation first (for static pages)
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+
+    if (response.ok) {
+      // Static page exists, navigate normally
+      window.location.href = url;
+      return;
+    }
+  } catch {
+    // Network error, continue to client-side rendering
+  }
+
+  // Static page doesn't exist, render client-side
+  await renderCluster(id);
+  clusterCache.set(id, true);
 }
 
 /**
  * Handle browser back/forward
  */
 function handlePopState(event) {
-  const id = event.state?.id;
+  const { id, type } = event.state || {};
 
-  if (id) {
+  if (!id || !type) return;
+
+  if (type === 'article') {
     renderArticle(id);
+  } else if (type === 'cluster') {
+    renderCluster(id);
   }
 }

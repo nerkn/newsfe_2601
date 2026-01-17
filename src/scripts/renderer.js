@@ -1,4 +1,4 @@
-import { fetchNewsRawById } from './client-api.js';
+import { fetchNewsRawById, fetchClusterById, fetchNewsRawByIds } from './client-api.js';
 
 /**
  * Render article page to DOM
@@ -139,4 +139,83 @@ function formatDate(dateString) {
     month: 'long',
     day: 'numeric',
   });
+}
+
+/**
+ * Render cluster page to DOM
+ */
+export async function renderCluster(id) {
+  showLoading();
+
+  try {
+    const cluster = await fetchClusterById(id);
+
+    if (!cluster) {
+      renderError('Cluster not found');
+      return;
+    }
+
+    // Fetch raw items for this cluster
+    const rawItems = await fetchNewsRawByIds(cluster.articles);
+
+    // Update page title
+    const cleanTitle = cluster.title.replace(/\*\*/g, '');
+    document.title = `${cleanTitle} - News Cluster`;
+
+    // Render content
+    const main = document.querySelector('main');
+    if (!main) return;
+
+    main.innerHTML = `
+      <article class="cluster-full">
+        <header class="cluster-full__header">
+          <h1 class="cluster-full__title">${cleanTitle}</h1>
+
+          ${cluster.short_desc ? `<p class="cluster-full__description">${escapeHtml(cluster.short_desc)}</p>` : ''}
+
+          <time class="cluster-full__date" datetime="${cluster.created_at}">
+            ${formatDate(cluster.created_at)}
+          </time>
+
+          <div class="cluster-full__meta">
+            <span class="cluster-full__count">${rawItems.length} articles in this cluster</span>
+          </div>
+        </header>
+
+        <div class="cluster-full__articles">
+          <h2 class="cluster-full__section-title">Articles in this Cluster</h2>
+          <div class="cluster-full__list">
+            ${rawItems.map((item) => `
+              <a href="/news/${item.id}" class="cluster-article-card">
+                ${item.imgUrl ? `
+                  <div class="cluster-article-card__image">
+                    <img src="${escapeHtml(item.imgUrl)}" alt="${escapeHtml(item.title)}" loading="lazy">
+                  </div>
+                ` : ''}
+                <div class="cluster-article-card__content">
+                  <span class="cluster-article-card__source">${item.source}</span>
+                  <h3 class="cluster-article-card__title">${escapeHtml(item.title)}</h3>
+                  <time class="cluster-article-card__date" datetime="${item.created_at}">
+                    ${formatDate(item.created_at)}
+                  </time>
+                </div>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+
+        <footer class="cluster-full__footer">
+          <a href="/">← Back to Home</a>
+        </footer>
+      </article>
+    `;
+
+    // Update URL
+    history.pushState({ id, type: 'cluster' }, '', `/cluster/${id}`);
+  } catch (error) {
+    console.error('Failed to render cluster:', error);
+    renderError('Failed to load cluster');
+  } finally {
+    hideLoading();
+  }
 }

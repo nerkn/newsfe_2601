@@ -3,6 +3,11 @@ import type { Source, Meta, Tag, NewsArticle, TagArticles, NewsRawItem } from '@
 const API_BASE_URL = import.meta.env.NEWS_API_BASE_URL || 'https://api.newshelp.org';
 const API_TIMEOUT = parseInt(import.meta.env.NEWS_API_TIMEOUT || '30000');
 
+// Memory cache
+const newsArticlesCache = new Map<string, NewsArticle[]>();
+const newsRawBatchCache = new Map<number, NewsRawItem[]>();
+const newsArticleCache = new Map<number, NewsArticle>();
+
 /**
  * Generic JSON file fetcher with timeout
  */
@@ -68,9 +73,19 @@ export function getBatchId(newsId: number): number {
  * Fetch news articles with batching support
  */
 export async function fetchNewsArticles(latestId?: number, limit: number = 20): Promise<NewsArticle[]> {
+  const cacheKey = `${latestId || 'base'}-${limit}`;
+
+  // Check cache
+  if (newsArticlesCache.has(cacheKey)) {
+    console.log(`[API Cache] Hit for news_articles: ${cacheKey}`);
+    return newsArticlesCache.get(cacheKey)!;
+  }
+
   // If no latestId provided, fetch base file
   if (!latestId) {
-    return fetchFile<NewsArticle[]>('news_articles');
+    const result = await fetchFile<NewsArticle[]>('news_articles');
+    newsArticlesCache.set(cacheKey, result);
+    return result;
   }
 
   const batchSize = 100;
@@ -99,22 +114,32 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
   const results = await Promise.all(promises);
   const flatResults = results.flat();
 
-  if (limit > 0 && flatResults.length > limit) {
-    return flatResults.slice(0, limit);
-  }
-
-  return flatResults;
+  const result = limit > 0 && flatResults.length > limit ? flatResults.slice(0, limit) : flatResults;
+  newsArticlesCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Fetch a single news article by ID
  */
 export async function fetchNewsArticleById(id: number): Promise<NewsArticle | undefined> {
+  // Check cache
+  if (newsArticleCache.has(id)) {
+    console.log(`[API Cache] Hit for article ${id}`);
+    return newsArticleCache.get(id);
+  }
+
   const batchStart = getBatchId(id);
 
   try {
     const articles = await fetchFile<NewsArticle[]>(`news_articles.${batchStart}`);
-    return articles.find((a) => a.id === id);
+    const article = articles.find((a) => a.id === id);
+
+    if (article) {
+      newsArticleCache.set(id, article);
+    }
+
+    return article;
   } catch (error) {
     console.warn(`[API] Failed to fetch article ${id}:`, error);
     return undefined;
@@ -127,6 +152,12 @@ export async function fetchNewsArticleById(id: number): Promise<NewsArticle | un
 export async function fetchNewsRawBatch(startId: number): Promise<NewsRawItem[]> {
   const batchStart = getBatchId(startId);
 
+  // Check cache
+  if (newsRawBatchCache.has(batchStart)) {
+    console.log(`[API Cache] Hit for news_raw batch ${batchStart}`);
+    return newsRawBatchCache.get(batchStart)!;
+  }
+
   try {
     console.log(`[API] Fetching news_raw batch ${batchStart}`);
     const response = await fetch(`${API_BASE_URL}/news_raw.${batchStart}.json`);
@@ -136,7 +167,9 @@ export async function fetchNewsRawBatch(startId: number): Promise<NewsRawItem[]>
       return [];
     }
 
-    return response.json();
+    const result = await response.json();
+    newsRawBatchCache.set(batchStart, result);
+    return result;
   } catch (error) {
     console.warn(`[API] Failed to fetch news_raw batch ${batchStart}:`, error);
     return [];

@@ -13,7 +13,20 @@ const sanitizeHTML = (html: string) => {
     .replace(/on\w+="[^"]*"/gi, '');
 };
 
-const safeContent = sanitizeHTML(content);
+// Process article content to convert [number] references to links
+// Handles [3333] and [3333,3334] formats
+const processArticleReferences = (content: string): string => {
+  // Replace patterns like [3333] or [3333,3334,3335] with links
+  return content.replace(/\[(\d+(?:,\d+)*)\]/g, (match, idsStr) => {
+    const ids = idsStr.split(',').map(id => id.trim());
+    const links = ids.map(id => {
+      return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
+    });
+    return links.join(' ');
+  });
+};
+
+const safeContent = processArticleReferences(sanitizeHTML(content));
 ---
 
 <article class="article-content" aria-labelledby={title ? 'article-title' : undefined}>
@@ -62,5 +75,19 @@ const safeContent = sanitizeHTML(content);
     height: auto;
     border-radius: 8px;
     margin: 1rem 0;
+  }
+
+  .article-content__body :global(.article-ref) {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0 0.125rem;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+  }
+
+  .article-content__body :global(.article-ref:hover) {
+    background-color: var(--color-surface);
+    text-decoration: underline;
   }
 </style>
