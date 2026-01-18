@@ -3,7 +3,7 @@ import Base from "@/layouts/Base.astro";
 ---
 
 <Base title="Page Not Found">
-  <section class="section-sm text-center">
+  <section id="not-found-content" class="section-sm text-center">
     <div class="container">
       <div class="row justify-center">
         <div class="sm:col-10 md:col-8 lg:col-6">
@@ -25,3 +25,27 @@ import Base from "@/layouts/Base.astro";
     </div>
   </section>
 </Base>
+
+<script>
+  // Check if this is a news/ or cluster/ URL that needs client-side rendering
+  const path = window.location.pathname;
+  const newsMatch = path.match(/^\/news\/(\d+)$/);
+  const clusterMatch = path.match(/^\/cluster\/(\d+)$/);
+
+  if (newsMatch || clusterMatch) {
+    // Hide the 404 content and load dynamically
+    const notFoundContent = document.getElementById('not-found-content');
+    if (notFoundContent) {
+      notFoundContent.style.display = 'none';
+    }
+
+    // Dynamic import and render
+    if (newsMatch) {
+      const id = parseInt(newsMatch[1]);
+      import('/scripts/renderer.js').then(({ renderArticle }) => renderArticle(id));
+    } else if (clusterMatch) {
+      const id = parseInt(clusterMatch[1]);
+      import('/scripts/renderer.js').then(({ renderCluster }) => renderCluster(id));
+    }
+  }
+</script>
