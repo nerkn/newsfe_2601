@@ -242,18 +242,6 @@ function sanitizeHTML(html) {
 }
 
 /**
- * Format date
- */
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-/**
  * Render cluster page to DOM
  */
 export async function renderCluster(id) {
