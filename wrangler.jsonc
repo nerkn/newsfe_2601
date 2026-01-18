@@ -2,8 +2,15 @@
   "name": "newsfe2601",
   "compatibility_date": "2026-01-11",
 
-  "pages_build_output_dir": "./dist",
- 
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+
+  "build": {
+    "command": "npm run build",
+    "watch_dir": "*"
+  },
 
   "vars": {
     "NEWS_API_BASE_URL": "https://api.newshelp.org",
