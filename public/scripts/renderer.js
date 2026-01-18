@@ -1,5 +1,99 @@
 import { fetchNewsRawById, fetchClusterById, fetchNewsRawByIds } from './client-api.js';
 
+// Cache for sources and tags
+let sourcesCache = null;
+let tagsCache = null;
+
+/**
+ * Fetch sources (cached)
+ */
+async function fetchSources() {
+  if (sourcesCache) return sourcesCache;
+
+  try {
+    const response = await fetch('https://api.newshelp.org/news_sources.json');
+    sourcesCache = await response.json();
+    return sourcesCache;
+  } catch (error) {
+    console.error('Failed to fetch sources:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch tags (cached)
+ */
+async function fetchTags() {
+  if (tagsCache) return tagsCache;
+
+  try {
+    const response = await fetch('https://api.newshelp.org/tags.json');
+    tagsCache = await response.json();
+    return tagsCache;
+  } catch (error) {
+    console.error('Failed to fetch tags:', error);
+    return [];
+  }
+}
+
+/**
+ * Format a date string to a readable format
+ */
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/**
+ * Get source name from sources array
+ */
+function getSourceName(sourceId, sources) {
+  const source = sources.find((s) => s.id === parseInt(sourceId));
+  return source?.title || sourceId;
+}
+
+/**
+ * Get source link from sources array
+ */
+function getSourceLink(sourceId, sources) {
+  const source = sources.find((s) => s.id === parseInt(sourceId));
+  return source?.link || '#';
+}
+
+/**
+ * Generate URL-safe slug from tag name
+ */
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Process article content to convert [number] references to links
+ */
+function processArticleContent(content) {
+  return content.replace(/\[(\d+(?:,\s*\d+)*)\]/g, (match, idsStr) => {
+    const ids = idsStr.split(',').map((id) => id.trim());
+    const links = ids.map((id) => {
+      return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
+    });
+    return links.join(' ');
+  });
+}
+
+/**
+ * Remove markdown bold formatting from titles
+ */
+function cleanTitle(title) {
+  return title.replace(/\*\*/g, '');
+}
+
 /**
  * Render article page to DOM
  */
@@ -14,6 +108,12 @@ export async function renderArticle(id) {
       return;
     }
 
+    // Fetch sources and tags
+    const [sources, allTags] = await Promise.all([fetchSources(), fetchTags()]);
+
+    // Get tags for this article
+    const itemTags = allTags.filter((tag) => item.cats?.includes(tag.id));
+
     // Update page title
     document.title = `${item.title} - News Site`;
 
@@ -24,11 +124,18 @@ export async function renderArticle(id) {
     main.innerHTML = `
       <article class="article-full">
         <header class="article-full__header">
-          <span class="article-full__source">${item.source}</span>
+          <span class="article-full__source">${escapeHtml(getSourceName(item.source, sources))}</span>
           <h1 class="article-full__title">${escapeHtml(item.title)}</h1>
           <time class="article-full__date" datetime="${item.created_at}">
             ${formatDate(item.created_at)}
           </time>
+          ${itemTags.length > 0 ? `
+            <div class="article-full__tags">
+              ${itemTags.map((tag) => `
+                <a href="/tag/${slugify(tag.tag)}" class="tag">${escapeHtml(tag.tag)}</a>
+              `).join('')}
+            </div>
+          ` : ''}
         </header>
 
         ${item.imgUrl ? `
@@ -38,11 +145,16 @@ export async function renderArticle(id) {
         ` : ''}
 
         <div class="article-full__content">
-          ${sanitizeHTML(item.article)}
+          ${processArticleContent(item.article)}
         </div>
 
         <footer class="article-full__footer">
-          <p>Source: <a href="${escapeHtml(item.source)}" target="_blank" rel="noopener">${item.source}</a></p>
+          <p>
+            Originally published by{' '}
+            <a href="${escapeHtml(getSourceLink(item.source, sources))}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(getSourceName(item.source, sources))}
+            </a>
+          </p>
         </footer>
       </article>
     `;
@@ -155,12 +267,21 @@ export async function renderCluster(id) {
       return;
     }
 
-    // Fetch raw items for this cluster
-    const rawItems = await fetchNewsRawByIds(cluster.articles);
+    // Fetch raw items, sources, and tags
+    const [rawItems, sources, allTags] = await Promise.all([
+      fetchNewsRawByIds(cluster.articles),
+      fetchSources(),
+      fetchTags()
+    ]);
+
+    // Get tags for this cluster
+    const clusterTags = allTags.filter((tag) => cluster.cats?.includes(tag.id));
+
+    // Process short_desc to convert article references to links
+    const processedShortDesc = cluster.short_desc ? processArticleContent(cluster.short_desc) : '';
 
     // Update page title
-    const cleanTitle = cluster.title.replace(/\*\*/g, '');
-    document.title = `${cleanTitle} - News Cluster`;
+    document.title = `${cleanTitle(cluster.title)} - News Cluster`;
 
     // Render content
     const main = document.querySelector('main');
@@ -169,9 +290,11 @@ export async function renderCluster(id) {
     main.innerHTML = `
       <article class="cluster-full">
         <header class="cluster-full__header">
-          <h1 class="cluster-full__title">${cleanTitle}</h1>
+          <h1 class="cluster-full__title">${escapeHtml(cleanTitle(cluster.title))}</h1>
 
-          ${cluster.short_desc ? `<p class="cluster-full__description">${escapeHtml(cluster.short_desc)}</p>` : ''}
+          ${processedShortDesc ? `
+            <p class="cluster-full__description">${processedShortDesc}</p>
+          ` : ''}
 
           <time class="cluster-full__date" datetime="${cluster.created_at}">
             ${formatDate(cluster.created_at)}
@@ -180,6 +303,14 @@ export async function renderCluster(id) {
           <div class="cluster-full__meta">
             <span class="cluster-full__count">${rawItems.length} articles in this cluster</span>
           </div>
+
+          ${clusterTags.length > 0 ? `
+            <div class="cluster-full__tags">
+              ${clusterTags.map((tag) => `
+                <a href="/tag/${slugify(tag.tag)}" class="tag">${escapeHtml(tag.tag)}</a>
+              `).join('')}
+            </div>
+          ` : ''}
         </header>
 
         <div class="cluster-full__articles">
@@ -193,7 +324,7 @@ export async function renderCluster(id) {
                   </div>
                 ` : ''}
                 <div class="cluster-article-card__content">
-                  <span class="cluster-article-card__source">${item.source}</span>
+                  <span class="cluster-article-card__source">${escapeHtml(getSourceName(item.source, sources))}</span>
                   <h3 class="cluster-article-card__title">${escapeHtml(item.title)}</h3>
                   <time class="cluster-article-card__date" datetime="${item.created_at}">
                     ${formatDate(item.created_at)}
