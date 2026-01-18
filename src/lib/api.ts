@@ -6,7 +6,7 @@ const API_TIMEOUT = parseInt(import.meta.env.NEWS_API_TIMEOUT || '30000');
 // Memory cache
 const newsArticlesCache = new Map<string, NewsArticle[]>();
 const newsRawBatchCache = new Map<number, NewsRawItem[]>();
-const newsArticleCache = new Map<number, NewsArticle>();
+const newsArticleCache = new Map<number, NewsArticle[]>();
 
 /**
  * Generic JSON file fetcher with timeout
@@ -123,20 +123,21 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
  * Fetch a single news article by ID
  */
 export async function fetchNewsArticleById(id: number): Promise<NewsArticle | undefined> {
-  // Check cache
-  if (newsArticleCache.has(id)) {
+  
+  const batchStart = getBatchId(id);
+
+  if (newsArticleCache.has(batchStart)) {
     console.log(`[API Cache] Hit for article ${id}`);
-    return newsArticleCache.get(id);
+    return newsArticleCache.get(batchStart)?.find(a=>a.id===id);
   }
 
-  const batchStart = getBatchId(id);
 
   try {
     const articles = await fetchFile<NewsArticle[]>(`news_articles.${batchStart}`);
     const article = articles.find((a) => a.id === id);
 
     if (article) {
-      newsArticleCache.set(id, article);
+      newsArticleCache.set(id, articles);
     }
 
     return article;
