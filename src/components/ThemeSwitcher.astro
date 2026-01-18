@@ -30,7 +30,7 @@
   .theme-button {
     width: 40px;
     height: 40px;
-    border: 2px solid var(--color-border);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     background: var(--color-surface);
     cursor: pointer;
@@ -112,7 +112,7 @@
 
   // Get or set theme
   function getTheme() {
-    return localStorage.getItem('theme') || 'light';
+    return localStorage.getItem('theme') || 'brown';
   }
 
   function setTheme(themeName) {
