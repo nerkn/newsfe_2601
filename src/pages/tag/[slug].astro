@@ -3,7 +3,6 @@ import Base from '@/layouts/Base.astro';
 import { fetchTags, fetchNewsByTag, fetchSources } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
 import { slugify } from '@/lib/utils';
-import type { Tag, Source } from '@/types/db';
 
 export async function getStaticPaths() {
   const tags = await fetchTags();
@@ -15,15 +14,12 @@ export async function getStaticPaths() {
 }
 
 const { tag } = Astro.props;
-const { fetchTags: getTags, fetchNewsByTag: getNewsByTag, fetchSources: getSources } = await import('@/lib/api');
 
-// Get news and sources for this tag
 const [news, sources] = await Promise.all([
-  getNewsByTag(tag.id, 20),
-  getSources(),
+  fetchNewsByTag(tag.id, 50),
+  fetchSources(),
 ]);
 
-// Create sources map
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 ---
 
