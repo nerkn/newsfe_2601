@@ -4,14 +4,21 @@ const API_BASE_URL = import.meta.env.NEWS_API_BASE_URL || 'https://api.newshelp.
 const API_TIMEOUT = parseInt(import.meta.env.NEWS_API_TIMEOUT || '30000');
 
 // Memory cache
+const fileCache = new Map<string, any>();
 const newsArticlesCache = new Map<string, NewsArticle[]>();
 const newsRawBatchCache = new Map<number, NewsRawItem[]>();
 const newsArticleCache = new Map<number, NewsArticle[]>();
 
 /**
- * Generic JSON file fetcher with timeout
+ * Generic JSON file fetcher with timeout and caching
  */
 export async function fetchFile<T>(file: string): Promise<T> {
+  // Check cache
+  if (fileCache.has(file)) {
+    console.log(`[API Cache] Hit for ${file}.json`);
+    return fileCache.get(file) as T;
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
@@ -27,7 +34,33 @@ export async function fetchFile<T>(file: string): Promise<T> {
 
     const data = await response.json();
     console.log(`[API] Successfully fetched ${file}.json`);
+
+    // Cache the result
+    fileCache.set(file, data);
+
     return data;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Generic JSON file fetcher WITHOUT caching (for batched operations)
+ */
+export async function fetchFileUncached<T>(file: string): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/${file}.json`, {
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${file}.json: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
   } finally {
     clearTimeout(timeoutId);
   }
@@ -99,11 +132,7 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
   for (let i = 0; i < batchesToFetch; i++) {
     const batchStart = (batches - 1 - i) * batchSize;
     promises.push(
-      fetch(`${API_BASE_URL}/news_articles.${batchStart}.json`)
-        .then(async (res) => {
-          if (!res.ok) return [];
-          return res.json() as Promise<NewsArticle[]>;
-        })
+      fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`)
         .catch((err) => {
           console.warn(`[API] Failed to fetch batch ${batchStart}:`, err);
           return [];
@@ -133,7 +162,7 @@ export async function fetchNewsArticleById(id: number): Promise<NewsArticle | un
 
 
   try {
-    const articles = await fetchFile<NewsArticle[]>(`news_articles.${batchStart}`);
+    const articles = await fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`);
     const article = articles.find((a) => a.id === id);
 
     if (article) {
@@ -160,15 +189,7 @@ export async function fetchNewsRawBatch(startId: number): Promise<NewsRawItem[]>
   }
 
   try {
-    console.log(`[API] Fetching news_raw batch ${batchStart}`);
-    const response = await fetch(`${API_BASE_URL}/news_raw.${batchStart}.json`);
-
-    if (!response.ok) {
-      console.warn(`[API] Batch ${batchStart} not found, returning empty array`);
-      return [];
-    }
-
-    const result = await response.json();
+    const result = await fetchFileUncached<NewsRawItem[]>(`news_raw.${batchStart}`);
     newsRawBatchCache.set(batchStart, result);
     return result;
   } catch (error) {
