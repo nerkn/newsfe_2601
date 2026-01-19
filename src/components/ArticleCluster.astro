@@ -21,7 +21,7 @@ const processedShortDesc = article.short_desc ? processArticleContent(article.sh
 
 <div class="article-cluster">
   <h2 class="article-cluster__title">
-    <a href={`/cluster/${article.id}`}>{cleanTitle(article.title)}</a>
+    <a href={`/articles/${article.id}`}>{cleanTitle(article.title)}</a>
   </h2>
 
   {processedShortDesc && (

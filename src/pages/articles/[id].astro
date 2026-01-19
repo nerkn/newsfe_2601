@@ -1,8 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import { fetchMeta, fetchNewsArticleById, fetchNewsRawByIds, fetchSources, fetchTags } from '@/lib/api';
-import { formatDate, getSourceName, getSourceLink, processArticleContent, cleanTitle, slugify } from '@/lib/utils';
-import type { Source, Tag } from '@/types/db';
+import { formatDate, getSourceName, processArticleContent, cleanTitle, slugify } from '@/lib/utils';
 
 export async function getStaticPaths() {
   // Fetch metadata to get latest cluster ID

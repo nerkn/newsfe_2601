@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { fetchTags, fetchNewsByTag, fetchSources } from '@/lib/api';
+import { fetchTags, fetchNewsByTag, fetchSources, fetchTagArticles } from '@/lib/api';
 import NewsGrid from '@/components/NewsGrid.astro';
 import { slugify } from '@/lib/utils';
 
@@ -15,19 +15,27 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.props;
 
-const [news, sources] = await Promise.all([
+// Get news, sources, and tag articles mapping
+const [news, sources, tagArticlesList] = await Promise.all([
   fetchNewsByTag(tag.id, 50),
   fetchSources(),
+  fetchTagArticles(),
 ]);
 
+// Get the tag articles mapping for this tag
+const tagMapping = tagArticlesList.find((t) => t.tag_id === tag.id);
+
+// Create sources map
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
 ---
 
-<Base title={`${tag.tag} - News Site`} description={tag.desc || `Latest news about ${tag.tag}`} headerVariant="minimal">
+<Base title={`${tag.tag} - News Site`} description={tagMapping?.description || tag.desc || `Latest news about ${tag.tag}`} headerVariant="minimal">
   <div class="page-content">
     <section class="tag-header">
       <h1>{tag.tag}</h1>
-      {tag.desc && <p class="tag-description">{tag.desc}</p>}
+      {(tagMapping?.description || tag.desc) && (
+        <p class="tag-description">{tagMapping?.description || tag.desc}</p>
+      )}
     </section>
 
     <section class="tag-news">
@@ -38,7 +46,7 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
     </section>
   </div>
 
-  <script slot="main" type="module" src="/scripts/main.js"></script>
+  <script is:inline slot="main" type="module" src="/scripts/main.js"></script>
 </Base>
 
 <style>

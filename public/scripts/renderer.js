@@ -330,7 +330,7 @@ export async function renderCluster(id) {
     `;
 
     // Update URL
-    history.pushState({ id, type: 'cluster' }, '', `/cluster/${id}`);
+    history.pushState({ id, type: 'cluster' }, '', `/articles/${id}`);
   } catch (error) {
     console.error('Failed to render cluster:', error);
     renderError('Failed to load cluster');

@@ -27,12 +27,12 @@ import Base from "@/layouts/Base.astro";
 </Base>
 
 <script is:inline>
-  // Check if this is a news/ or cluster/ URL that needs client-side rendering
+  // Check if this is a news/ or articles/ URL that needs client-side rendering
   const path = window.location.pathname;
   const newsMatch = path.match(/^\/news\/(\d+)$/);
-  const clusterMatch = path.match(/^\/cluster\/(\d+)$/);
+  const articlesMatch = path.match(/^\/articles\/(\d+)$/);
 
-  if (newsMatch || clusterMatch) {
+  if (newsMatch || articlesMatch) {
     const notFoundContent = document.getElementById('not-found-content');
     if (notFoundContent) {
       notFoundContent.style.display = 'none';

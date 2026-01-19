@@ -10,12 +10,6 @@ interface Props {
 const { tags, limit } = Astro.props;
 const displayTags = limit ? tags.slice(0, limit) : tags;
 
-// Helper to check if tag has parent
-const hasParent = (tag: Tag): boolean => {
-  return tag.parent && tag.parent.length > 0;
-};
-
-// Helper to get parent tags
 const getParentTags = (tag: Tag, allTags: Tag[]): Tag[] => {
   if (!tag.parent || tag.parent.length === 0) return [];
   return allTags.filter(t => tag.parent.includes(t.id));

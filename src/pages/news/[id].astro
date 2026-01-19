@@ -1,8 +1,8 @@
 ---
+
 import Base from '@/layouts/Base.astro';
-import { fetchMeta, fetchNewsRawById, fetchSources } from '@/lib/api';
+import { fetchMeta, fetchNewsRawById, fetchSources, fetchTags } from '@/lib/api';
 import { getSourceName, getSourceLink, processArticleContent, slugify } from '@/lib/utils';
-import type { NewsRawItem, Source } from '@/types/db';
 
 export async function getStaticPaths() {
   // Fetch metadata to get latest ID
@@ -31,7 +31,6 @@ if (!item) {
 }
 
 // Fetch tags and sources for display
-const { fetchTags, fetchSources } = await import('@/lib/api');
 const [allTags, sources] = await Promise.all([fetchTags(), fetchSources()]);
 const itemTags = allTags.filter((tag) => item.cats.includes(tag.id));
 

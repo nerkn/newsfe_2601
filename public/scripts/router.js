@@ -14,13 +14,13 @@ export function initRouter() {
 async function handleInitialLoad() {
   const path = window.location.pathname;
   const newsMatch = path.match(/^\/news\/(\d+)$/);
-  const clusterMatch = path.match(/^\/cluster\/(\d+)$/);
+  const articleMatch = path.match(/^\/articles\/(\d+)$/);
 
   if (newsMatch) {
     const id = parseInt(newsMatch[1]);
     await navigateToArticle(id, path);
-  } else if (clusterMatch) {
-    const id = parseInt(clusterMatch[1]);
+  } else if (articleMatch) {
+    const id = parseInt(articleMatch[1]);
     await navigateToCluster(id, path);
   }
 }
@@ -48,12 +48,12 @@ function handleLinkClick(event) {
     return;
   }
 
-  const clusterMatch = href?.match(/^\/cluster\/(\d+)$/);
+  const articlesMatch = href?.match(/^\/articles\/(\d+)$/);
 
-  if (clusterMatch) {
+  if (articlesMatch) {
     event.preventDefault();
 
-    const id = parseInt(clusterMatch[1]);
+    const id = parseInt(articlesMatch[1]);
 
     if (clusterCache.has(id)) {
       history.pushState({ id, type: 'cluster' }, '', href);

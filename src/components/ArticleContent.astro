@@ -17,7 +17,7 @@ const sanitizeHTML = (html: string) => {
 // Handles [3333] and [3333,3334] formats
 const processArticleReferences = (content: string): string => {
   // Replace patterns like [3333] or [3333,3334,3335] with links
-  return content.replace(/\[(\d+(?:,\d+)*)\]/g, (match, idsStr) => {
+  return content.replace(/\[(\d+(?:,\d+)*)\]/g, (match, idsStr:string) => {
     const ids = idsStr.split(',').map(id => id.trim());
     const links = ids.map(id => {
       return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
