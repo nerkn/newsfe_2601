@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import  fs from 'fs';
+import path from 'path';
 
 const API_BASE_URL = process.env.NEWS_API_BASE_URL || 'https://api.newshelp.org';
 const SITE_URL = process.env.SITE_URL || 'https://newshelp.org';
