@@ -36,7 +36,7 @@ export function getSourceLink(sourceId: string | number, sourcesMap: Map<number,
  */
 export function processArticleContent(content: string): string {
   // Replace patterns like [3333] or [3333, 3334, 3335] with links
-  return content.replace(/\[(\d+(?:,\s*\d+)*)\]/g, (match, idsStr) => {
+  return content.replace(/\[(\d+(?:,\s*\d+)*)\]/g, (_match, idsStr) => {
     const ids = idsStr.split(',').map((id: string) => id.trim());
     const links = ids.map((id: string) => {
       return `<a href="/news/${id}" class="article-ref">[${id}]</a>`;
