@@ -1,5 +1,4 @@
 import mdx from "@astrojs/mdx";
-import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import AutoImport from "astro-auto-import";
 import { defineConfig } from "astro/config";
@@ -29,10 +28,6 @@ export default defineConfig({
     },
   },
   integrations: [
-    sitemap({
-      changefreq: 'hourly',
-      priority: 0.7,
-    }),
     AutoImport({
       imports: [
         "@/shortcodes/Button",

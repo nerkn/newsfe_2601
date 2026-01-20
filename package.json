@@ -8,11 +8,12 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"node scripts/themeGenerator.js --watch\" \"npm generate-json && astro dev\"",
-    "build": "node scripts/themeGenerator.js && npm run generate-json && astro build",
+    "build": "node scripts/themeGenerator.js && npm run generate-json && astro build && npm run generate-sitemap",
     "preview": "astro preview",
     "check": "astro check",
     "format": "prettier -w ./src",
     "generate-json": "node scripts/jsonGenerator.js",
+    "generate-sitemap": "node scripts/generateSitemaps.js",
     "remove-darkmode": "node scripts/removeDarkmode.js && npm run format"
   },
   "dependencies": {

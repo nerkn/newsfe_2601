@@ -33,10 +33,34 @@ const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
 ---
 
 <Base title="News Site - Latest News" description="Stay updated with the latest news and articles" headerVariant="full">
+  <meta slot="head" name="lastmod" content={meta.generated_at} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "News Site",
+    "url": new URL(import.meta.env.SITE || "https://newshelp.org").origin,
+    "dateModified": meta.generated_at,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": new URL(import.meta.env.SITE || "https://newshelp.org").origin + "/search?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  })} />
+
   <div class="page-content">
     <section class="hero">
       <h1>Latest News</h1>
       <p>Stay updated with the latest news and articles</p>
+      <time class="last-updated" datetime={meta.generated_at}>
+        Last updated: {new Date(meta.generated_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </time>
     </section>
 
     <TagList tags={tags} limit={20} />
@@ -80,6 +104,16 @@ const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
   .hero h1 {
     font-size: 3rem;
     margin-bottom: 0.5rem;
+  }
+
+  .last-updated {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
   }
 
   .latest-news h2 {

@@ -1,16 +1,34 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { fetchTags } from '@/lib/api';
+import { fetchTags, fetchMeta } from '@/lib/api';
 import { slugify } from '@/lib/utils';
 
-const tags = await fetchTags();
+const [tags, meta] = await Promise.all([fetchTags(), fetchMeta()]);
+const updatedAt = meta.generated_at;
 ---
 
 <Base title="All Tags - News Site" description="Browse all news categories and topics">
+  <meta slot="head" name="lastmod" content={updatedAt} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "All Categories",
+    "description": "Browse all news categories and topics",
+    "dateModified": updatedAt,
+    "url": `${new URL(import.meta.env.SITE || "https://newshelp.org").origin}/tags`
+  })} />
+
   <div class="page-content">
     <section class="tags-page">
       <h1>All Categories</h1>
       <p class="tags-page__subtitle">Browse news by topic</p>
+      <time class="last-updated" datetime={updatedAt}>
+        Last updated: {new Date(updatedAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </time>
 
       <div class="tags-grid">
         {tags.map((tag) => (
@@ -43,6 +61,16 @@ const tags = await fetchTags();
 
   .tags-page__subtitle {
     font-size: 1.25rem;
+    color: var(--color-text-secondary);
+  }
+
+  .last-updated {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border-radius: 20px;
+    font-size: 0.875rem;
     color: var(--color-text-secondary);
   }
 

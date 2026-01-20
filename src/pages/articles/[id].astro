@@ -46,6 +46,28 @@ const processedShortDesc = article.short_desc ? processArticleContent(article.sh
 ---
 
 <Base title={`${cleanTitle(article.title)} - News Cluster`} description={article.short_desc || cleanTitle(article.title)} headerVariant="minimal" includeFooter={false}>
+  <meta slot="head" name="lastmod" content={article.created_at} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": cleanTitle(article.title),
+    "description": article.short_desc || cleanTitle(article.title),
+    "datePublished": article.created_at,
+    "dateModified": article.created_at,
+    "url": `${new URL(import.meta.env.SITE || "https://newshelp.org").origin}/articles/${article.id}`,
+    "numberOfItems": rawItems.length,
+    "itemListElement": rawItems.slice(0, 10).map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "NewsArticle",
+        "headline": item.title,
+        "url": `${new URL(import.meta.env.SITE || "https://newshelp.org").origin}/news/${item.id}`,
+        "datePublished": item.created_at
+      }
+    }))
+  })} />
+
   <article class="cluster-full">
     <header class="cluster-full__header">
       <h1 class="cluster-full__title">{cleanTitle(article.title)}</h1>

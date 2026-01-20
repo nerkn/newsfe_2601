@@ -15,11 +15,12 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.props;
 
-// Get news, sources, and tag articles mapping
-const [news, sources, tagArticlesList] = await Promise.all([
+// Get news, sources, tag articles mapping, and meta
+const [news, sources, tagArticlesList, meta] = await Promise.all([
   fetchNewsByTag(tag.id, 50),
   fetchSources(),
   fetchTagArticles(),
+  fetchMeta(),
 ]);
 
 // Get the tag articles mapping for this tag
@@ -27,15 +28,34 @@ const tagMapping = tagArticlesList.find((t) => t.tag_id === tag.id);
 
 // Create sources map
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
+const updatedAt = meta.generated_at;
 ---
 
 <Base title={`${tag.tag} - News Site`} description={tagMapping?.description || tag.desc || `Latest news about ${tag.tag}`} headerVariant="minimal">
+  <meta slot="head" name="lastmod" content={updatedAt} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": tag.tag,
+    "description": tagMapping?.description || tag.desc || `Latest news about ${tag.tag}`,
+    "dateModified": updatedAt,
+    "url": `${new URL(import.meta.env.SITE || "https://newshelp.org").origin}/tag/${slugify(tag.tag)}`,
+    "numberOfItems": news.length
+  })} />
+
   <div class="page-content">
     <section class="tag-header">
       <h1>{tag.tag}</h1>
       {(tagMapping?.description || tag.desc) && (
         <p class="tag-description">{tagMapping?.description || tag.desc}</p>
       )}
+      <time class="last-updated" datetime={updatedAt}>
+        Last updated: {new Date(updatedAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </time>
     </section>
 
     <section class="tag-news">
@@ -70,6 +90,16 @@ const sourcesMap = new Map(sources.map((s) => [s.id, s]));
     color: var(--color-text-secondary);
     margin: 0;
     line-height: 1.6;
+  }
+
+  .last-updated {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
   }
 
   .tag-news h2 {

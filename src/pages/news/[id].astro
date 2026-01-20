@@ -41,7 +41,26 @@ const processedContent = processArticleContent(item.article);
 ---
 
 <Base title={`${item.title} - News Site`} description={item.article.slice(0, 160)} headerVariant="minimal" includeFooter={false}>
+  <meta slot="head" name="lastmod" content={item.created_at} />
   {item.imgUrl && <meta slot="head" property="og:image" content={item.imgUrl} />}
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": item.title,
+    "datePublished": item.created_at,
+    "dateModified": item.created_at,
+    "description": item.article.slice(0, 160),
+    ...(item.imgUrl && { "image": item.imgUrl }),
+    "publisher": {
+      "@type": "Organization",
+      "name": getSourceName(item.source, sourcesMap),
+      "url": getSourceLink(item.source, sourcesMap)
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `${new URL(import.meta.env.SITE || "https://newshelp.org").origin}/news/${item.id}`
+    }
+  })} />
 
   <article class="article-full">
     <header class="article-full__header">
