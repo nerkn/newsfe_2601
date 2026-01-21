@@ -5,7 +5,6 @@ import NewsGrid from '@/components/NewsGrid.astro';
 import ArticleCluster from '@/components/ArticleCluster.astro';
 import TagList from '@/components/TagList.astro';
 
-// Fetch data at build time
 const [meta, tags, recentNews, sources] = await Promise.all([
   fetchMeta(),
   fetchTags(),
