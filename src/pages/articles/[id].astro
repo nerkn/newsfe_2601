@@ -24,7 +24,6 @@ export async function getStaticPaths() {
 const { id } = Astro.params;
 const article = await fetchNewsArticleById(parseInt(id));
 
-// Handle 404
 if (!article) {
   return Astro.redirect('/404');
 }
