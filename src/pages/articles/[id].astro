@@ -28,19 +28,13 @@ if (!article) {
   return Astro.redirect('/404');
 }
 
-// Fetch all raw items for this cluster
 const rawItems = await fetchNewsRawByIds(article.articles);
 
-// Fetch sources and tags
 const [sources, allTags] = await Promise.all([fetchSources(), fetchTags()]);
 
-// Create sources map for quick lookup
 const sourcesMap = new Map(sources.map((s) => [s.id, s]));
-
-// Get tags for this cluster
 const clusterTags = allTags.filter((tag) => article.cats.includes(tag.id));
 
-// Process short_desc to convert article references to links
 const processedShortDesc = article.short_desc ? processArticleContent(article.short_desc) : '';
 ---
 
