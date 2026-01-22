@@ -107,7 +107,7 @@ export function getBatchId(newsId: number): number {
  */
 export async function fetchNewsArticles(latestId?: number, limit: number = 20): Promise<NewsArticle[]> {
   const cacheKey = `${latestId || 'base'}-${limit}`;
-
+  console.log(`GEtting ${cacheKey} news articles` )
   // Check cache
   if (newsArticlesCache.has(cacheKey)) {
     console.log(`[API Cache] Hit for news_articles: ${cacheKey}`);
@@ -121,14 +121,11 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
     return result;
   }
 
-  const batchSize = 100;
-  const batches = Math.ceil(latestId / batchSize);
-
   const promises: Promise<NewsArticle[]>[] = [];
 
   // Fetch batches in reverse order (most recent first)
-  for (let i = batches ; i > batches -3 ; i--) {
-    const batchStart = (i ) * batchSize;
+  for (let i = 0 ; i < 2 ; i++) {
+    const batchStart =  getBatchId(latestId +  i*100);
     promises.push(
       fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`)
         .catch((err) => {
