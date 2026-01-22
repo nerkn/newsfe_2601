@@ -123,8 +123,7 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
 
   const promises: Promise<NewsArticle[]>[] = [];
 
-  // Fetch batches in reverse order (most recent first)
-  for (let i = 0 ; i < 2 ; i++) {
+  for (let i = -1 ; i < 1 ; i++) {
     const batchStart =  getBatchId(latestId +  i*100);
     promises.push(
       fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`)
@@ -137,9 +136,11 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
 
   const results = await Promise.all(promises);
   const flatResults = results.flat();
+  console.log(`Getting ${flatResults.length} flats
+     ${flatResults[0].id}  ${flatResults[flatResults.length-1].id}`)
 
   const result = limit > 0 && flatResults.length > limit ? flatResults.slice(0, limit) : flatResults;
-  newsArticlesCache.set(cacheKey, result);
+  newsArticlesCache.set(cacheKey, flatResults);
   return result;
 }
 
