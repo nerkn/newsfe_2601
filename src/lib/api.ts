@@ -123,14 +123,12 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
 
   const batchSize = 100;
   const batches = Math.ceil(latestId / batchSize);
-  const staticLimit = parseInt(import.meta.env.NEWS_STATIC_ARTICLE_LIMIT || '100');
-  const batchesToFetch = Math.min(batches, Math.ceil(staticLimit / batchSize));
 
   const promises: Promise<NewsArticle[]>[] = [];
 
   // Fetch batches in reverse order (most recent first)
-  for (let i = 0; i < batchesToFetch; i++) {
-    const batchStart = (batches - 1 - i) * batchSize;
+  for (let i = batches ; i > batches -3 ; i--) {
+    const batchStart = (i ) * batchSize;
     promises.push(
       fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`)
         .catch((err) => {
