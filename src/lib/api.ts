@@ -105,8 +105,10 @@ export function getBatchId(newsId: number): number {
 /**
  * Fetch news articles with batching support
  */
-export async function fetchNewsArticles(latestId?: number, limit: number = 20): Promise<NewsArticle[]> {
-  const cacheKey = `${latestId || 'base'}-${limit}`;
+export async function fetchNewsArticles(latestId?: number): Promise<NewsArticle[]> {
+
+  const batchStart =  getBatchId(latestId || 100);
+  const cacheKey = `${batchStart || 'base'}`;
   console.log(`GEtting ${cacheKey} news articles` )
   // Check cache
   if (newsArticlesCache.has(cacheKey)) {
@@ -121,27 +123,17 @@ export async function fetchNewsArticles(latestId?: number, limit: number = 20): 
     return result;
   }
 
-  const promises: Promise<NewsArticle[]>[] = [];
-
-  for (let i = -1 ; i < 1 ; i++) {
-    const batchStart =  getBatchId(latestId +  i*100);
-    promises.push(
-      fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`)
+  const flatResults = await fetchFileUncached<NewsArticle[]>(`news_articles.${batchStart}`)
         .catch((err) => {
           console.warn(`[API] Failed to fetch batch ${batchStart}:`, err);
           return [];
         })
-    );
-  }
 
-  const results = await Promise.all(promises);
-  const flatResults = results.flat();
   console.log(`Getting ${flatResults.length} flats
      ${flatResults[0].id}  ${flatResults[flatResults.length-1].id}`)
 
-  const result = limit > 0 && flatResults.length > limit ? flatResults.slice(0, limit) : flatResults;
   newsArticlesCache.set(cacheKey, flatResults);
-  return result;
+  return flatResults;
 }
 
 /**
