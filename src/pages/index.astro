@@ -53,13 +53,6 @@ const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
     <section class="hero">
       <h1>Latest News</h1>
       <p>Stay updated with the latest news and articles</p>
-      <time class="last-updated" datetime={meta.generated_at}>
-        Last updated: {new Date(meta.generated_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })}
-      </time>
     </section>
 
     <TagList tags={tags} limit={20} />
@@ -84,6 +77,13 @@ const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
     </section>
   </div>
 
+      <time class="last-updated" datetime={meta.generated_at}>
+        Last updated: {new Date(meta.generated_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </time>
   <!-- Client-side JavaScript for dynamic article loading -->
   <script type="module" src="/scripts/main.js"></script>
 </Base>
