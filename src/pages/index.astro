@@ -12,10 +12,8 @@ const [meta, tags, recentNews, sources] = await Promise.all([
   fetchSources(),
 ]);
 
-// Fetch news articles (with latest ID for batching)
 let newsArticles = (await fetchNewsArticles(meta.tables.news_articles.latest_id));
-
-// Sort articles by ID descending (newest first)
+ 
 newsArticles = newsArticles.sort((a, b) => b.id - a.id).splice(0,10)
 
 // Create sources map for quick lookup
