@@ -1,4 +1,0 @@
-# Redirect news/ and articles/ routes to index for client-side handling
-# This allows the router to dynamically load content while returning 200 status
-/news/* / 200
-/articles/* / 200
