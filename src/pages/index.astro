@@ -82,8 +82,46 @@ const rawItems = await fetchNewsRawByIds(allRawIds.slice(0, 30));
           day: 'numeric',
         })}
       </time>
+
   <!-- Client-side JavaScript for dynamic article loading -->
   <script type="module" src="/scripts/main.js"></script>
+  <script is:inline>
+    // Handle client-side routing and show 404 for truly invalid routes
+    const path = window.location.pathname;
+    const isDynamicArticleRoute = /^\/news\/\d+$/.test(path);
+    const isDynamicClusterRoute = /^\/articles\/\d+$/.test(path);
+    const isDynamicRoute = isDynamicArticleRoute || isDynamicClusterRoute;
+
+    // Valid static routes (existing pages in src/pages/)
+    const validStaticRoutes = ['/', '/tags', '/_index'];
+    const isTagRoute = /^\/tag\/[^/]+$/.test(path);
+
+    if (isDynamicRoute) {
+      // Hide homepage content, let router render the article/cluster
+      const pageContent = document.querySelector('.page-content');
+      const lastUpdated = document.querySelector('.last-updated');
+      if (pageContent) pageContent.style.display = 'none';
+      if (lastUpdated) lastUpdated.style.display = 'none';
+    } else if (!validStaticRoutes.includes(path) && !isTagRoute) {
+      // Invalid route - show 404
+      const main = document.querySelector('main');
+      if (main) {
+        main.innerHTML = `
+          <div class="container" style="max-width: 800px; padding: 4rem 2rem; text-align: center;">
+            <h1 style="font-size: 8rem; font-weight: bold; margin-bottom: 1rem;">404</h1>
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Page not found</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
+              The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+            </p>
+            <a href="/" style="display: inline-block; padding: 0.75rem 2rem; background: var(--color-primary); color: white; text-decoration: none; border-radius: 8px;">
+              Back to home
+            </a>
+          </div>
+        `;
+        document.title = '404 - Page Not Found';
+      }
+    }
+  </script>
 </Base>
 
 <style>

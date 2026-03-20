@@ -4,6 +4,15 @@ const articleCache = new Map();
 const clusterCache = new Map();
 
 export function initRouter() {
+  // If page was server-rendered, don't re-render
+  if (window.__SERVER_RENDERED__) {
+    console.log('Page was server-rendered, skipping initial render');
+    // Still set up event listeners for navigation
+    document.addEventListener('click', handleLinkClick);
+    window.addEventListener('popstate', handlePopState);
+    return;
+  }
+
   handleInitialLoad();
 
   document.addEventListener('click', handleLinkClick);
@@ -66,32 +75,18 @@ function handleLinkClick(event) {
 
 
 async function navigateToArticle(id, url) {
-  try {
-    const response = await fetch(url, { method: 'HEAD' });
-
-    if (response.ok) {
-      window.location.href = url;
-      return;
-    }
-  } catch {
-  }
-
+  // With SPA mode, all routes return 200 with index.html
+  // We check __SERVER_RENDERED__ in handleInitialLoad to avoid re-rendering
+  // If we get here, we need to client-side render
   await renderArticle(id);
   articleCache.set(id, true);
 }
 
 
 async function navigateToCluster(id, url) {
-  try {
-    const response = await fetch(url, { method: 'HEAD' });
-
-    if (response.ok) {
-      window.location.href = url;
-      return;
-    }
-  } catch {
-  }
-
+  // With SPA mode, all routes return 200 with index.html
+  // We check __SERVER_RENDERED__ in handleInitialLoad to avoid re-rendering
+  // If we get here, we need to client-side render
   await renderCluster(id);
   clusterCache.set(id, true);
 }

@@ -118,6 +118,10 @@ const processedShortDesc = article.short_desc ? processArticleContent(article.sh
   </article>
 
   <script slot="main" type="module" src="/scripts/main.js"></script>
+  <script is:inline>
+    // Mark this page as server-rendered so the router doesn't re-render
+    window.__SERVER_RENDERED__ = true;
+  </script>
 </Base>
 
 <style>
